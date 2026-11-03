@@ -30,15 +30,25 @@ export interface Receipt {
   totalCents: number
   source: 'photo' | 'app' | 'manual'
   createdAt: string
+  /** erfundene Beispieldaten */
+  demo?: boolean
 }
 
 export interface ReceiptLine {
   id?: number
   receiptId: number
+  /** Text wie auf dem Bon, z. B. "H-VOLLM. 3,5%" */
   rawText: string
   quantity: number
+  /** Zeilenbetrag in Cent (Menge × Stückpreis); negativ für Rabatte */
   priceCents: number
-  productId?: number
+}
+
+/** Foto eines Bons, verkleinert als JPEG */
+export interface ReceiptImage {
+  receiptId: number
+  type: string
+  data: ArrayBuffer
 }
 
 /** Normalisiertes Produkt, z. B. "Vollmilch 3,5 %" */
@@ -48,12 +58,19 @@ export interface Product {
   category?: string
 }
 
-/** Zuordnung Laden + Bontext -> Produkt */
+/**
+ * Zuordnung Laden + Bontext -> Produkt. Einzige Quelle der Wahrheit:
+ * Bonzeilen werden beim Lesen über diese Tabelle einem Produkt zugeordnet.
+ * rawText ist normalisiert (siehe normalizeRaw).
+ */
 export interface Alias {
   id?: number
   store: string
   rawText: string
-  productId: number
+  /** fehlt, wenn ignored = true */
+  productId?: number
+  /** z. B. Pfand, Rabatt, Tüte – zählt nicht in den Top-Artikeln */
+  ignored?: boolean
 }
 
 export interface Meta {
@@ -66,6 +83,7 @@ export class TrackerDB extends Dexie {
   orderItems!: EntityTable<OrderItem, 'id'>
   receipts!: EntityTable<Receipt, 'id'>
   receiptLines!: EntityTable<ReceiptLine, 'id'>
+  receiptImages!: EntityTable<ReceiptImage, 'receiptId'>
   products!: EntityTable<Product, 'id'>
   aliases!: EntityTable<Alias, 'id'>
   meta!: EntityTable<Meta, 'key'>
@@ -81,6 +99,10 @@ export class TrackerDB extends Dexie {
       aliases: '++id, &[store+rawText], productId',
       meta: 'key',
     })
+    this.version(2).stores({
+      receiptLines: '++id, receiptId',
+      receiptImages: 'receiptId',
+    })
   }
 }
 
@@ -89,6 +111,7 @@ export const TABLES = [
   'orderItems',
   'receipts',
   'receiptLines',
+  'receiptImages',
   'products',
   'aliases',
   'meta',

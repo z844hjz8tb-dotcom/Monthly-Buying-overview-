@@ -49,8 +49,9 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | M2 | Amazon-Konsolen-Skript (paginiert, lädt Detailseiten für Einzelpreise, Selektoren im `CONFIG`-Block, Prüfbericht am Ende) | ⏳ wartet auf gespeicherte Amazon-Seiten |
 | M3 | Import mit Vorschau ("neu / aktualisiert / unverändert") und Duplikat-Erkennung | ✅ |
 | M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ✅ (mit Beispieldaten getestet) |
-| M5 | Kassenbon-Erfassung (Foto/PDF) mit Prüf-Ansicht (Summe der Zeilen = Bon-Summe?) | ⏳ |
-| M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats → **Phase 2 fertig** | ⏳ |
+| M5 | Kassenbon-Erfassung (manuell + Foto) mit Summenprüfung | ✅ |
+| M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats | ✅ |
+| M7 | Automatische Bon-Erkennung (füllt die Erfassungsmaske vor) | ⏳ Entscheidung lokal vs. KI offen |
 | später | Abgleich der Top-Artikel mit Prospektangeboten | – |
 
 ## Austauschformat Amazon-Skript → App
@@ -84,6 +85,14 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 - Amazon ändert das Layout. Deshalb stehen alle Selektoren zentral im Skript, mit Ausweich-Selektoren, und am Ende kommt ein Prüfbericht.
 - Sonderfälle: Stornos, Rücksendungen, Mehrfach-Artikel, Marketplace, digitale Käufe.
 - Hilfreich für die Entwicklung: eine gespeicherte HTML-Seite der Bestellübersicht (persönliche Daten geschwärzt).
+
+## Kassenbons: Zusammenführen von Artikeln
+
+- Bonzeilen speichern nur den Originaltext. Die Zuordnung zum Produkt läuft über die Tabelle `aliases` (Laden + normalisierter Text → Produkt oder „ignoriert“). Eine geänderte Zuordnung gilt sofort für alle Bons.
+- Normalisierung (`src/normalize/match.ts`): Kleinschreibung, Umlaute, „3,5“ → „3.5“, „3,5 %“ = „3,5%“, „1 kg“ = „1kg“.
+- Vorschläge: wortweiser Vergleich, Abkürzungen zählen als Wortanfang („VOLLM“ → „Vollmilch“). Verglichen wird mit Produktnamen **und** allen bekannten Schreibweisen, deshalb werden die Vorschläge mit jeder Zuordnung besser.
+- Top-Artikel: Stückzahl und Ausgaben pro Monat, dazu der Durchschnittspreis je Laden (günstigster zuerst). Pfand, Tüten und Rabatte lassen sich ignorieren.
+- Bon-Fotos werden auf etwa 1600 px verkleinert gespeichert und sind im Backup enthalten.
 
 ## Handy-Besonderheit: Datensicherheit
 
