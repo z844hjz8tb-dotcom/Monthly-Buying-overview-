@@ -390,3 +390,14 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .segmented button.active { background: var(--accent); color: var(--accent-text); }
 .button-row.compact { flex-wrap: nowrap; gap: 6px; }
 .button-row.compact button { min-height: 38px; padding: 0 10px; font-size: 0.9rem; flex: 1 1 auto; white-space: nowrap; }
+.paste-area {
+  font: 0.85rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+}
+.import-status { font-size: 0.9rem; margin-top: 8px; }

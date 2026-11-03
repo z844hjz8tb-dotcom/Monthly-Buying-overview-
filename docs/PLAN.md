@@ -51,7 +51,8 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ✅ (mit Beispieldaten getestet) |
 | M5 | Kassenbon-Erfassung (manuell + Foto) mit Summenprüfung | ✅ |
 | M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats | ✅ |
-| M7 | Automatische Bon-Erkennung (füllt die Erfassungsmaske vor) | ⏳ Entscheidung lokal vs. KI offen |
+| M7a | Bon-Text-Leser: Text einfügen (iPhone Live Text, App-Bons) und PDF-eBons (pdf.js, lokal) | ✅ allgemein, Feinschliff je Laden wartet auf Beispiel-Bons |
+| M7b | Optional: KI-Erkennung für schwierige Fotos | offen, evtl. unnötig dank Live Text |
 | später | Abgleich der Top-Artikel mit Prospektangeboten | – |
 
 ## Austauschformat Amazon-Skript → App
@@ -93,6 +94,16 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 - Vorschläge: wortweiser Vergleich, Abkürzungen zählen als Wortanfang („VOLLM“ → „Vollmilch“). Verglichen wird mit Produktnamen **und** allen bekannten Schreibweisen, deshalb werden die Vorschläge mit jeder Zuordnung besser.
 - Top-Artikel: Stückzahl und Ausgaben pro Monat, dazu der Durchschnittspreis je Laden (günstigster zuerst). Pfand, Tüten und Rabatte lassen sich ignorieren.
 - Bon-Fotos werden auf etwa 1600 px verkleinert gespeichert und sind im Backup enthalten.
+
+## Bons aus Apps (iPhone)
+
+| Laden | Weg |
+|---|---|
+| Penny | eBon-PDF → „In Dateien sichern“ → „PDF-Bon“ |
+| Lidl, Kaufland, Müller | Screenshot oder PDF; bei Screenshot: Live Text kopieren → „Text einfügen“ |
+| Papierbon | Foto → Live Text kopieren → „Text einfügen“ |
+
+Der Leser (`src/receipts/parse.ts`) erkennt Artikel- und Mengenzeilen, Gewichtszeilen, Rabatte (werden mit dem Artikel davor verrechnet), Summe, Laden und Datum. Live-Text-Spalten (erst alle Namen, dann alle Preise) werden der Reihe nach gepaart.
 
 ## Handy-Besonderheit: Datensicherheit
 
