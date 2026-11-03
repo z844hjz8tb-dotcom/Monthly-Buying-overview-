@@ -213,3 +213,34 @@ it('korrigiert 0/9-Verwechslungen über die Preis-Spalte', () => {
     ['BORSTENPINSEL GR8', 139],
   ])
 })
+
+describe('PDF-eBons (echter Text aus pdf.js, ohne Adresse/Zahlungsdaten)', () => {
+  it.each([
+    ['kaufland-pdf-2026-10-21.txt', 'Kaufland', '2026-10-21', 93, 17129],
+    ['penny-pdf-2026-10-06.txt', 'Penny', '2026-10-06', 74, 14599],
+  ])('%s', async (file, store, date, count, total) => {
+    const { readFileSync } = await import('node:fs')
+    const r = parseReceiptText(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8'))
+    expect(r.store).toBe(store)
+    expect(r.date).toBe(date)
+    expect(r.totalCents).toBe(total)
+    expect(r.lines).toHaveLength(count)
+    expect(r.lines.reduce((s, l) => s + l.priceCents, 0)).toBe(total)
+  })
+
+  it('Kaufland: Menge in der Zeile, Mengenzeile danach, Card-Rabatt, Gewicht', async () => {
+    const { readFileSync } = await import('node:fs')
+    const r = parseReceiptText(readFileSync(new URL('./fixtures/kaufland-pdf-2026-10-21.txt', import.meta.url), 'utf8'))
+    const find = (t: string) => r.lines.find((l) => l.rawText === t)
+    expect(find('Katjes')).toEqual({ rawText: 'Katjes', quantity: 2, priceCents: 278 })
+    expect(find('Cordon bleu gef.')).toEqual({ rawText: 'Cordon bleu gef.', quantity: 2, priceCents: 958 })
+    expect(find('Corny free Banane')?.priceCents).toBe(159) // 1,79 − 0,20 Rabatt
+    expect(find('Bananen kg')?.priceCents).toBe(65)
+    expect(find('KLC Mangostr. 125g')?.priceCents).toBe(167)
+    expect(r.lines.some((l) => /Treuepunkte|gespart|DE\d+/.test(l.rawText))).toBe(false)
+  })
+})
+
+it('erkennt den Laden an der Kopfzeile, nicht an Produktnamen', () => {
+  expect(parseReceiptText('Kaufland\nMüllermilch 1,49 B\nSumme 1,49').store).toBe('Kaufland')
+})

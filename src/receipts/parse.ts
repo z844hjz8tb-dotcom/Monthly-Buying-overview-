@@ -45,6 +45,11 @@ const QTY_LINE = new RegExp(
   String.raw`^(\d{1,3})\s*(?:stk\.?|st\.?|stück)?\s*[x×*]\s*(${AMOUNT})\s*(?:€|EUR)?(?:\s*\/\s*\w+)?(?:\s+(${AMOUNT}))?(?:\s*[A-Z0-9]{1,2})?\s*\*?$`,
   'i',
 )
+// Menge mitten in der Artikelzeile: "Katjes   2 * 1,39   2,78 B"
+const INLINE_QTY = new RegExp(
+  String.raw`^(.+?)\s+(\d{1,3})\s*[x×*]\s*(${AMOUNT})\s+(${AMOUNT})\s*(?:€|EUR)?(?:\s*[A-Z0-9]{1,2})?\s*\*?$`,
+  'i',
+)
 const WEIGHT_LINE = /^\d+[.,]\d+\s*kg\s*[x×*]/i
 // Tabellenzeile mit Menge vorn und mehreren Beträgen hinten (z. B. Müller):
 // "1 ABLAGEKORB A4 ROT   2,59          2,59a"  /  "1 X  2,99  0,50  2,49a"
@@ -58,20 +63,28 @@ const DISCOUNT = /(rabatt|preisvorteil|nachlass|coupon|aktion|ersparnis|sie spar
 const END_MARKERS = /^(bar|gegeben|rückgeld|rueckgeld|ec[- ]?karte|kartenzahlung|girocard|visa|mastercard|kreditkarte|paypal|mwst|ust|steuer|netto|brutto|zahlung|bezahlt)/i
 const NOISE = [
   /\b\d{5}\b\s+\p{L}/u, // PLZ + Ort
-  /str(asse|aße|\.)?\s*\d/i,
+  /(stra(ss|ß)e|str\.)\s*\d{1,4}(\s*[a-e])?(\s|,|$)/i, // Hausnummer, aber nicht "Mangostr. 125g"
   /\b(tel|fax|uid|ust-?id|st-?nr|steuer-?nr|www\.|http|filiale|markt|kasse|bon-?nr|beleg|bediener|öffnungszeiten)\b/i,
   /^\d{1,2}[.:]\d{2}(:\d{2})?$/, // Uhrzeit
   /^(eur|€)$/i,
+  /^(preis\s+)?eur$/i,
+  /(gespart|treuepunkte|punkte gesammelt|card xtra:)/i,
+  /^[A-Z]{2}\d{8,12}$/, // USt-IdNr.
   /^(stk\.?|menge|anz\.?)?\s*(artikel|bezeichnung|beschreibung)\b/i, // Tabellenkopf
   /^(preis|summe|nachlass|betrag)(\s+(preis|summe|nachlass|betrag|eur))*$/i,
   /^[-=*_\s]+$/,
 ]
 
+/** Laden = der bekannte Name, der im Text zuerst vorkommt (Kopfzeile), als ganzes Wort ("Müllermilch" ≠ Müller). */
 function detectStore(text: string): string | undefined {
-  const t = text.toLowerCase().replace(/ü/g, 'ue')
-  const aliases: Record<string, string> = { 'mueller': 'Müller', 'müller': 'Müller' }
-  for (const [k, v] of Object.entries(aliases)) if (t.includes(k)) return v
-  return KNOWN_STORES.find((s) => new RegExp(`\\b${s.toLowerCase()}\\b`).test(t))
+  const t = text.toLowerCase().replace(/ü/g, 'ue').replace(/ä/g, 'ae').replace(/ö/g, 'oe')
+  let best: { store: string; index: number } | undefined
+  for (const store of KNOWN_STORES) {
+    const key = store.toLowerCase().replace(/ü/g, 'ue')
+    const m = new RegExp(`(^|[^a-z])${key}([^a-z]|$)`).exec(t)
+    if (m && (!best || m.index < best.index)) best = { store, index: m.index }
+  }
+  return best?.store
 }
 
 function detectDate(text: string): string | undefined {
@@ -159,14 +172,25 @@ export function parseReceiptText(text: string): ParsedReceipt {
         prev.quantity = n
         lastFromQtyCheck = true
       } else if (pendingTexts.length > 0) {
-        // Text steht davor, Preis kommt nur in der Mengenzeile
-        pushLine(pendingTexts.shift()!, lineTotal)
+        // Text steht direkt davor, Preis kommt nur in der Mengenzeile.
+        // Ältere Texte ohne Preis davor waren Kopf- oder Hinweiszeilen.
+        const text = pendingTexts.pop()!
+        result.skipped.push(...pendingTexts.splice(0))
+        pushLine(text, lineTotal)
         last!.quantity = n
         lastFromQtyCheck = true
       } else {
         // Mengenzeile vor dem Artikel
         pendingQty = n
       }
+      continue
+    }
+
+    const inline = row.match(INLINE_QTY)
+    if (inline && !isNoise(inline[1])) {
+      pushLine(clean(inline[1]), toCents(inline[4]))
+      last!.quantity = Number(inline[2])
+      lastFromQtyCheck = true
       continue
     }
 
@@ -195,7 +219,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
 
     const priced = row.match(PRICE_END)
     if (priced) {
-      const label = clean(row.slice(0, priced.index!))
+      const label = clean(row.slice(0, priced.index!).replace(/\s+\d+[.,]\d+\s*kg$/i, ''))
       if (label && !isNoise(label)) {
         pushLine(label, toCents(priced[1]))
         continue
