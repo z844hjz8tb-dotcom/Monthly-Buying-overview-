@@ -10,7 +10,19 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest}'] },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest}'],
+        // Texterkennung (~5 MB) nicht vorab laden, sondern beim ersten Gebrauch speichern
+        globIgnores: ['ocr/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/ocr/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'ocr', expiration: { maxEntries: 10 } },
+          },
+        ],
+      },
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Ausgaben-Tracker',

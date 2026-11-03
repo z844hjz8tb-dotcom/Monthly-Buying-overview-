@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# wird beim Build aus node_modules kopiert
+public/ocr

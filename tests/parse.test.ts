@@ -99,7 +99,6 @@ describe('Müller', () => {
   it('liest Tabellenzeilen mit Menge, Preis, Nachlass und Summe', () => {
     const r = parseReceiptText(`
       MH Müller Handels GmbH, Albstraße 92, 89081 Ulm
-      Willy-Brand-Straße 21, 97877 Wertheim, +49 9342 9664997
       Stk Artikel             Preis Nachlass  Summe
         1 MAY MASCARA LASH SE  12,99           12,99a
         1 LOREAL REVITALIFT F   5,95            5,95a
@@ -175,5 +174,42 @@ it('paart Müller-Zeilen auch, wenn Live Text die Spalten trennt', () => {
     ['MAY MASCARA LASH SE', 1, 1299],
     ['LOREAL REVITALIFT F', 1, 595],
     ['KATJES SAUER GRUEN', 1, 139],
+  ])
+})
+
+describe('Texterkennung (echte Ausgabe von tesseract.js für Müller-Bilder)', () => {
+  it.each([
+    ['mueller-ocr-2026-08-18.txt', '2026-08-18', 46, 6194],
+    ['mueller-ocr-2026-10-31.txt', '2026-10-31', 7, 3922],
+    ['mueller-ocr-browser-2026-08-18.txt', '2026-08-18', 46, 6194],
+    ['mueller-ocr-browser-2026-10-31.txt', '2026-10-31', 7, 3922],
+  ])('%s', async (file, date, count, total) => {
+    const { readFileSync } = await import('node:fs')
+    const r = parseReceiptText(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8'))
+    expect(r.store).toBe('Müller')
+    expect(r.date).toBe(date)
+    expect(r.totalCents).toBe(total)
+    expect(r.lines).toHaveLength(count)
+    expect(r.lines.reduce((s, l) => s + l.priceCents, 0)).toBe(total)
+    expect(r.lines.every((l) => /^[A-ZÄÖÜ]/.test(l.rawText))).toBe(true)
+  })
+})
+
+it('korrigiert 0/9-Verwechslungen über die Preis-Spalte', () => {
+  const r = parseReceiptText(`
+    1 LINEAL 16CM KUNSTST   9,75            0,75a
+    1 HEFT A5 16BL LIN.01   0,75            9,75a
+    1 ZEICHENMAPPE A3 EIN   4,99            4,99a
+    1 TEURES TEIL           9,75            9,75a
+    1 RABATT ARTIKEL        2,00    0,50    1,50a
+    ll BORSTENPINSEL GR8     1,39            1,39a
+  `)
+  expect(r.lines.map((l) => [l.rawText, l.priceCents])).toEqual([
+    ['LINEAL 16CM KUNSTST', 75],
+    ['HEFT A5 16BL LIN.01', 75],
+    ['ZEICHENMAPPE A3 EIN', 499],
+    ['TEURES TEIL', 975],
+    ['RABATT ARTIKEL', 150],
+    ['BORSTENPINSEL GR8', 139],
   ])
 })

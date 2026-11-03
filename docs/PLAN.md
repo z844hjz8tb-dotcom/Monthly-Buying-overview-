@@ -51,8 +51,10 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ✅ (mit Beispieldaten getestet) |
 | M5 | Kassenbon-Erfassung (manuell + Foto) mit Summenprüfung | ✅ |
 | M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats | ✅ |
-| M7a | Bon-Text-Leser: Text einfügen (iPhone Live Text, App-Bons) und PDF-eBons (pdf.js, lokal) | ✅ allgemein, Feinschliff je Laden wartet auf Beispiel-Bons |
-| M7b | Optional: KI-Erkennung für schwierige Fotos | offen, evtl. unnötig dank Live Text |
+| M7a | Bon-Leser + PDF-eBons (pdf.js, lokal) | ✅ |
+| M7b | Bon-Bilder lokal auslesen (tesseract.js, deutsch) | ✅ Müller getestet (46/46 und 7/7 Artikel) |
+| M7c | Kaufland, Penny, Lidl am echten Bon prüfen | ⏳ wartet auf Beispiel-Bons |
+| M7d | Optional: KI-Erkennung für Fotos von Papierbons | offen |
 | später | Abgleich der Top-Artikel mit Prospektangeboten | – |
 
 ## Austauschformat Amazon-Skript → App
@@ -100,11 +102,15 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 | Laden | Weg |
 |---|---|
 | Penny | eBon-PDF → „In Dateien sichern“ → „PDF-Bon“ |
-| Müller | Bild aus der App → Live Text kopieren → „Text einfügen“ (Format getestet: Menge, Preis, Nachlass, Summe; Zwischensummen werden übersprungen) |
-| Lidl, Kaufland | Screenshot oder PDF; bei Screenshot: Live Text kopieren → „Text einfügen“ |
-| Papierbon | Foto → Live Text kopieren → „Text einfügen“ |
+| Müller | Bild aus der App sichern → „🖼️ Bon-Bild“ |
+| Lidl, Kaufland | Screenshot oder PDF → „🖼️ Bon-Bild“ bzw. „📄 PDF-Bon“ |
+| Papierbon | Foto → „🖼️ Bon-Bild“ (schlechter als App-Bilder) |
 
-Der Leser (`src/receipts/parse.ts`) erkennt Artikel- und Mengenzeilen, Gewichtszeilen, Rabatte (werden mit dem Artikel davor verrechnet), Summe, Laden und Datum. Live-Text-Spalten (erst alle Namen, dann alle Preise) werden der Reihe nach gepaart.
+Live Text (iPhone) wurde verworfen: Es erkannte nicht alle Zeilen.
+
+**Texterkennung** (`src/receipts/ocr.ts`): tesseract.js mit deutschen Sprachdaten, von der App selbst ausgeliefert (`scripts/copy-ocr.mjs` → `public/ocr`, ca. 5 MB, wird erst beim ersten Gebrauch geladen und dann offline gespeichert). Vorher wird das Bild ganzzahlig auf ca. 1500 px Breite vergrößert und in Schwarz-Weiß umgewandelt – ohne das fehlen die Artikelzeilen. Typische Fehler (0↔9, „1l“ statt „1“) korrigiert der Leser über die Preis-Spalte.
+
+Der Leser (`src/receipts/parse.ts`) erkennt Müller-Tabellenzeilen (Menge, Preis, Nachlass, Summe), Artikel- und Mengenzeilen, Gewichtszeilen, Rabatte (werden mit dem Artikel davor verrechnet), Summe, Laden und Datum. Live-Text-Spalten (erst alle Namen, dann alle Preise) werden der Reihe nach gepaart.
 
 ## Handy-Besonderheit: Datensicherheit
 

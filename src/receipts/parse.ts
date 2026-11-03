@@ -29,10 +29,10 @@ export interface ParsedReceipt {
   skipped: string[]
 }
 
-const AMOUNT = String.raw`-?\d{1,5}[.,]\d{2}-?`
+const AMOUNT = String.raw`-?\d{1,5}[.,] ?\d{2}-?`
 const toCents = (s: string) => {
   const neg = s.startsWith('-') || s.endsWith('-')
-  const v = Math.round(Number(s.replace(/-/g, '').replace(',', '.')) * 100)
+  const v = Math.round(Number(s.replace(/[-\s]/g, '').replace(',', '.')) * 100)
   return neg ? -v : v
 }
 
@@ -86,11 +86,30 @@ function detectDate(text: string): string | undefined {
 }
 
 const clean = (s: string) => s.replace(/\s+/g, ' ').trim()
+/** Typische Erkennungsfehler am Zeilenanfang: "1l HEFT …", "l HEFT …" -> "1 HEFT …" */
+const fixOcrRow = (s: string) => s.replace(/^(?:[lI|][1lI|]?|1[lI|])\s+(?=\S)/, '1 ')
 const isNoise = (s: string) => NOISE.some((r) => r.test(s)) || detectDate(s) !== undefined
+
+/**
+ * Betrag einer Tabellenzeile (Menge, Stückpreis, [Nachlass], Summe).
+ * Die Texterkennung verwechselt gern 0 und 9 ("9,75a" statt "0,75a"). Ohne Nachlass
+ * müssen Menge × Stückpreis und Summe übereinstimmen; weichen sie nur durch eine
+ * 0/9-Verwechslung voneinander ab, ist der kleinere Wert der richtige.
+ */
+function pickTableAmount(qty: number, unitStr: string, discountStr: string | undefined, totalStr: string): number {
+  const total = toCents(totalStr)
+  if (discountStr !== undefined) return total
+  const unit = toCents(unitStr)
+  const expected = unit * qty
+  if (expected === total) return total
+  const digits = (c: number) => String(Math.abs(c)).replace(/9/g, '0').replace(/^0+/, '')
+  if (qty === 1 && digits(unit) === digits(total)) return Math.min(unit, total)
+  return total
+}
 
 export function parseReceiptText(text: string): ParsedReceipt {
   const result: ParsedReceipt = { store: detectStore(text), date: detectDate(text), lines: [], skipped: [] }
-  const rows = text.split(/\r?\n/).map(clean).filter(Boolean)
+  const rows = text.split(/\r?\n/).map(clean).map(fixOcrRow).filter(Boolean)
 
   /** Texte ohne Preis, die auf ihren Preis warten (Live-Text-Spalten) */
   const pendingTexts: string[] = []
@@ -154,7 +173,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
     const table = row.match(TABLE_LINE)
     if (table && !isNoise(table[2])) {
       const n = table[1] ? Number(table[1]) : 1
-      pushLine(clean(table[2]), toCents(table[5]))
+      pushLine(clean(table[2]), pickTableAmount(n, table[3], table[4], table[5]))
       last!.quantity = n
       lastFromQtyCheck = true
       continue
