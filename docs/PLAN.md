@@ -100,7 +100,8 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 | Laden | Weg |
 |---|---|
 | Penny | eBon-PDF → „In Dateien sichern“ → „PDF-Bon“ |
-| Lidl, Kaufland, Müller | Screenshot oder PDF; bei Screenshot: Live Text kopieren → „Text einfügen“ |
+| Müller | Bild aus der App → Live Text kopieren → „Text einfügen“ (Format getestet: Menge, Preis, Nachlass, Summe; Zwischensummen werden übersprungen) |
+| Lidl, Kaufland | Screenshot oder PDF; bei Screenshot: Live Text kopieren → „Text einfügen“ |
 | Papierbon | Foto → Live Text kopieren → „Text einfügen“ |
 
 Der Leser (`src/receipts/parse.ts`) erkennt Artikel- und Mengenzeilen, Gewichtszeilen, Rabatte (werden mit dem Artikel davor verrechnet), Summe, Laden und Datum. Live-Text-Spalten (erst alle Namen, dann alle Preise) werden der Reihe nach gepaart.
