@@ -1,4 +1,5 @@
 import { AMAZON_EXPORT_FORMAT, type AmazonExport } from './amazon'
+import type { ReceiptInput } from '../receipts/store'
 
 /** Erfundene Beispieldaten zum Ausprobieren. Bestellnummern beginnen mit "DEMO-". */
 export const DEMO_PREFIX = 'DEMO-'
@@ -44,4 +45,25 @@ export function buildDemoExport(year = 2026, months = [7, 8, 9, 10, 11]): Amazon
     }
   }
   return { format: AMAZON_EXPORT_FORMAT, version: 1, exportedAt: new Date().toISOString(), orders }
+}
+
+/** Erfundene Kassenbons mit typischen Abkürzungen der Läden. */
+export function buildDemoReceipts(year = 2026): ReceiptInput[] {
+  const r = (store: string, date: string, lines: [string, number, number][]): ReceiptInput => ({
+    store,
+    date: `${year}-${date}`,
+    source: 'manual',
+    demo: true,
+    totalCents: lines.reduce((s, [, , p]) => s + p, 0),
+    lines: lines.map(([rawText, quantity, priceCents]) => ({ rawText, quantity, priceCents })),
+  })
+  return [
+    r('Lidl', '10-04', [['H-VOLLM. 3,5%', 2, 198], ['BANANEN', 1, 129], ['TOAST WEIZEN', 1, 89], ['PFAND', 1, -75]]),
+    r('Rewe', '10-11', [['Vollmilch 3,5% 1L', 1, 119], ['Bio Bananen', 1, 189], ['Ja! Butter', 1, 229], ['Tragetasche', 1, 25]]),
+    r('Penny', '10-19', [['H-MILCH 3,5% 1L', 2, 210], ['DT. MARKENBUTTER', 1, 199], ['NUDELN SPIRELLI', 2, 158]]),
+    r('Lidl', '10-27', [['H-VOLLM. 3,5%', 3, 297], ['BANANEN', 1, 119], ['MILSANI BUTTER', 1, 199]]),
+    r('Lidl', '11-01', [['H-VOLLM. 3,5%', 2, 198], ['BANANEN', 1, 125], ['TOAST WEIZEN', 1, 89], ['TOMATEN RISPE', 1, 179]]),
+    r('Kaufland', '11-02', [['K-CL. H-MILCH 3,5', 2, 198], ['BUTTER DT.MARKEN', 1, 189], ['SPIRELLI 500G', 1, 79], ['ZAHNPASTA', 1, 95]]),
+    r('Rewe', '11-03', [['Vollmilch 3,5% 1L', 1, 119], ['Bio Bananen', 1, 199], ['Tomaten Rispe', 1, 249], ['Tragetasche', 1, 25]]),
+  ]
 }

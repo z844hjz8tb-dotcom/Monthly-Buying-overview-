@@ -4,7 +4,8 @@ import { db, TABLES } from '../db/schema'
 import { backupFileName, createBackup, parseBackup, restoreBackup } from '../db/backup'
 import { downloadJson } from '../lib/download'
 import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
-import { buildDemoExport, DEMO_PREFIX } from '../import/demo'
+import { buildDemoExport, buildDemoReceipts, DEMO_PREFIX } from '../import/demo'
+import { deleteReceipt, saveReceipt } from '../receipts/store'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
 
@@ -13,12 +14,18 @@ export function SettingsView() {
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const lastBackup = useLiveQuery(() => db.meta.get('lastBackupAt'))
-  const demoCount = useLiveQuery(() => db.orders.where('orderId').startsWith(DEMO_PREFIX).count())
+  const demoCount = useLiveQuery(async () =>
+    (await db.orders.where('orderId').startsWith(DEMO_PREFIX).count()) +
+    (await db.receipts.filter((r) => !!r.demo).count()))
 
   async function loadDemo() {
     const { orders } = parseAmazonExport(JSON.stringify(buildDemoExport()))
     await applyImport(db, await planImport(db, orders))
-    setMessage({ kind: 'ok', text: `${orders.length} Beispiel-Bestellungen geladen. Schau in die Übersicht.` })
+    const receipts = buildDemoReceipts()
+    if (!(await db.receipts.filter((r) => !!r.demo).count())) {
+      for (const r of receipts) await saveReceipt(db, r)
+    }
+    setMessage({ kind: 'ok', text: `${orders.length} Amazon-Bestellungen und ${receipts.length} Kassenbons geladen.` })
   }
 
   async function removeDemo() {
@@ -26,6 +33,7 @@ export function SettingsView() {
       await db.orders.where('orderId').startsWith(DEMO_PREFIX).delete()
       await db.orderItems.where('orderId').startsWith(DEMO_PREFIX).delete()
     })
+    for (const r of await db.receipts.filter((r) => !!r.demo).toArray()) await deleteReceipt(db, r.id!)
     setMessage({ kind: 'ok', text: 'Beispieldaten entfernt.' })
   }
 
@@ -117,7 +125,7 @@ export function SettingsView() {
       <section className="card">
         <h2>Beispieldaten</h2>
         <p className="muted">
-          Erfundene Amazon-Bestellungen zum Ausprobieren. Sie lassen sich jederzeit wieder entfernen,
+          Erfundene Amazon-Bestellungen und Kassenbons zum Ausprobieren. Sie lassen sich jederzeit wieder entfernen,
           ohne echte Daten anzufassen.
         </p>
         <div className="button-row">

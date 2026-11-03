@@ -21,6 +21,7 @@ describe('Backup', () => {
     await a.orders.add({ orderId: '302-1', date: '2026-11-02', totalCents: 1999, source: 'amazon', importedAt: now, updatedAt: now })
     await a.orderItems.add({ orderId: '302-1', title: 'USB-Kabel', quantity: 1, unitPriceCents: 1999 })
     await a.products.add({ canonicalName: 'Vollmilch 3,5 %' })
+    await a.receiptImages.add({ receiptId: 1, type: 'image/jpeg', data: new Uint8Array([1, 2, 3, 250]).buffer })
 
     const json = JSON.stringify(await createBackup(a))
     const b = freshDb()
@@ -30,6 +31,8 @@ describe('Backup', () => {
     expect(await b.orders.toArray()).toEqual(await a.orders.toArray())
     expect(await b.orderItems.toArray()).toEqual(await a.orderItems.toArray())
     expect(await b.products.count()).toBe(1)
+    const img = await b.receiptImages.get(1)
+    expect([...new Uint8Array(img!.data)]).toEqual([1, 2, 3, 250])
     expect(await b.orders.get('alt')).toBeUndefined()
   })
 
