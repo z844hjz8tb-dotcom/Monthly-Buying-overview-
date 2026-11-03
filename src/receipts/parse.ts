@@ -38,14 +38,22 @@ const toCents = (s: string) => {
 
 // Preis am Zeilenende, optional mit Währung, Steuerklasse (A, B, 1, 2, AW …) und Sternchen
 const PRICE_END = new RegExp(String.raw`(?:^|\s)(${AMOUNT})\s*(?:€|EUR)?(?:\s*[A-Z0-9]{1,2})?\s*\*?$`, 'i')
-const PRICE_ONLY = new RegExp(String.raw`^(${AMOUNT})\s*(?:€|EUR)?(?:\s*[A-Z0-9]{1,2})?\s*\*?$`, 'i')
+// Nur Beträge (eine Spalte oder "Preis Summe" aus Live Text); der letzte zählt
+const PRICE_ONLY = new RegExp(String.raw`^(?:${AMOUNT}\s+){0,2}(${AMOUNT})\s*(?:€|EUR)?(?:\s*[A-Z0-9]{1,2}|[a-z])?\s*\*?$`, 'i')
 // "2 x 0,99", "2 Stk x 0,99 1,98", "2 St. * 0,99"
 const QTY_LINE = new RegExp(
   String.raw`^(\d{1,3})\s*(?:stk\.?|st\.?|stück)?\s*[x×*]\s*(${AMOUNT})\s*(?:€|EUR)?(?:\s*\/\s*\w+)?(?:\s+(${AMOUNT}))?(?:\s*[A-Z0-9]{1,2})?\s*\*?$`,
   'i',
 )
 const WEIGHT_LINE = /^\d+[.,]\d+\s*kg\s*[x×*]/i
-const TOTAL_LINE = /^(summe|gesamt(?:betrag|summe)?|zu zahlen|total|endsumme|betrag)\b/i
+// Tabellenzeile mit Menge vorn und mehreren Beträgen hinten (z. B. Müller):
+// "1 ABLAGEKORB A4 ROT   2,59          2,59a"  /  "1 X  2,99  0,50  2,49a"
+const TABLE_LINE = new RegExp(
+  String.raw`^(?:(\d{1,3})\s+)?(.+?)\s+(${AMOUNT})\s+(?:(${AMOUNT})\s+)?(${AMOUNT})\s*(?:€|EUR)?(?:\s*[A-Z0-9]{1,2}|[a-z])?\s*\*?$`,
+  'i',
+)
+const SUBTOTAL = /(zwischensumme|zw\.?-?summe|subtotal)/i
+const TOTAL_LINE = /^(summe|gesamt(?:betrag|summe)?|zu (?:be)?zahlen|total|endsumme|betrag)\b/i
 const DISCOUNT = /(rabatt|preisvorteil|nachlass|coupon|aktion|ersparnis|sie sparen|lidl plus|vorteil)/i
 const END_MARKERS = /^(bar|gegeben|rückgeld|rueckgeld|ec[- ]?karte|kartenzahlung|girocard|visa|mastercard|kreditkarte|paypal|mwst|ust|steuer|netto|brutto|zahlung|bezahlt)/i
 const NOISE = [
@@ -54,6 +62,8 @@ const NOISE = [
   /\b(tel|fax|uid|ust-?id|st-?nr|steuer-?nr|www\.|http|filiale|markt|kasse|bon-?nr|beleg|bediener|öffnungszeiten)\b/i,
   /^\d{1,2}[.:]\d{2}(:\d{2})?$/, // Uhrzeit
   /^(eur|€)$/i,
+  /^(stk\.?|menge|anz\.?)?\s*(artikel|bezeichnung|beschreibung)\b/i, // Tabellenkopf
+  /^(preis|summe|nachlass|betrag)(\s+(preis|summe|nachlass|betrag|eur))*$/i,
   /^[-=*_\s]+$/,
 ]
 
@@ -114,7 +124,10 @@ export function parseReceiptText(text: string): ParsedReceipt {
       continue
     }
 
-    if (WEIGHT_LINE.test(row)) continue
+    if (WEIGHT_LINE.test(row) || SUBTOTAL.test(row)) {
+      if (SUBTOTAL.test(row)) result.skipped.push(row)
+      continue
+    }
 
     const qty = row.match(QTY_LINE)
     if (qty) {
@@ -138,10 +151,25 @@ export function parseReceiptText(text: string): ParsedReceipt {
       continue
     }
 
+    const table = row.match(TABLE_LINE)
+    if (table && !isNoise(table[2])) {
+      const n = table[1] ? Number(table[1]) : 1
+      pushLine(clean(table[2]), toCents(table[5]))
+      last!.quantity = n
+      lastFromQtyCheck = true
+      continue
+    }
+
     const priceOnly = row.match(PRICE_ONLY)
     if (priceOnly) {
       const cents = toCents(priceOnly[1])
-      if (pendingTexts.length) pushLine(pendingTexts.shift()!, cents)
+      if (pendingTexts.length) {
+        // Menge vorn im Namen ("1 ABLAGEKORB A4 ROT") abtrennen
+        const t = pendingTexts.shift()!
+        const lead = t.match(/^(\d{1,3})\s+(\D.*)$/)
+        pushLine(lead ? lead[2] : t, cents)
+        if (lead) last!.quantity = Number(lead[1])
+      }
       else result.skipped.push(row)
       continue
     }

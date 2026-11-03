@@ -94,3 +94,86 @@ describe('parseReceiptText', () => {
     expect(r.skipped).toEqual(['Irgendwas ohne Preis', 'Noch ein Text'])
   })
 })
+
+describe('Müller', () => {
+  it('liest Tabellenzeilen mit Menge, Preis, Nachlass und Summe', () => {
+    const r = parseReceiptText(`
+      MH Müller Handels GmbH, Albstraße 92, 89081 Ulm
+      Willy-Brand-Straße 21, 97877 Wertheim, +49 9342 9664997
+      Stk Artikel             Preis Nachlass  Summe
+        1 MAY MASCARA LASH SE  12,99           12,99a
+        1 LOREAL REVITALIFT F   5,95            5,95a
+        1 YEAUTY EYE PAD MASK   0,95            0,95a
+        1 YEAUTY EYE PAD MASK   0,95            0,95a
+        1 KOPFBEDECKUNG-10205  12,99           12,99a
+        1 CATTIER HANDCREME H   4,00            4,00a
+        1 KATJES SAUER GRUEN    1,39            1,39b
+        7 Zwischensumme                 0,00    39,22
+       ZU BEZAHLEN     39,22
+         Kartenzahlung              EUR       39,22
+      Datum:                     31.10.2026
+      Uhrzeit:                 09:23:33 Uhr
+      MwSt %        Netto  MwSt.Betr.     Brutto
+      b: 7,00        1,30       0,09       1,39
+    `)
+    expect(r.store).toBe('Müller')
+    expect(r.date).toBe('2026-10-31')
+    expect(r.totalCents).toBe(3922)
+    expect(r.lines).toHaveLength(7)
+    expect(r.lines[0]).toEqual({ rawText: 'MAY MASCARA LASH SE', quantity: 1, priceCents: 1299 })
+    expect(r.lines[6]).toEqual({ rawText: 'KATJES SAUER GRUEN', quantity: 1, priceCents: 139 })
+    expect(r.lines.reduce((s, l) => s + l.priceCents, 0)).toBe(3922)
+  })
+
+  it('zählt Zwischensummen nicht mit und rechnet Nachlass ein', () => {
+    const r = parseReceiptText(`
+      Müller
+        1 ABLAGEKORB A4 ROT     2,59            2,59a
+        1 VERPACKUNG:PAPIERT*   0,35            0,35a
+        2 HEFT A5 16BL LIN.07   0,19            0,38a
+       11 Zwischensumme                 0,00    3,32
+        1 BUCHSCHONER TRANSPA   1,39    0,40    0,99a
+        1 MALBLOCK  A3 PELIKA   3,89            3,89a
+       46 Zwischensumme                 0,40    8,20
+       ZU BEZAHLEN     8,20
+    `)
+    expect(r.lines.map((l) => [l.rawText, l.quantity, l.priceCents])).toEqual([
+      ['ABLAGEKORB A4 ROT', 1, 259],
+      ['VERPACKUNG:PAPIERT*', 1, 35],
+      ['HEFT A5 16BL LIN.07', 2, 38],
+      ['BUCHSCHONER TRANSPA', 1, 99],
+      ['MALBLOCK A3 PELIKA', 1, 389],
+    ])
+    expect(r.totalCents).toBe(820)
+  })
+})
+
+it('liest den kompletten Müller-Bon mit 46 Artikeln (abgetippt)', async () => {
+  const { readFileSync } = await import('node:fs')
+  const r = parseReceiptText(readFileSync(new URL('./fixtures/mueller-2026-08-18.txt', import.meta.url), 'utf8'))
+  expect(r.store).toBe('Müller')
+  expect(r.date).toBe('2026-08-18')
+  expect(r.totalCents).toBe(6194)
+  expect(r.lines).toHaveLength(46)
+  expect(r.lines.reduce((s, l) => s + l.priceCents, 0)).toBe(6194)
+  expect(r.lines.filter((l) => l.rawText === 'PLASTIK-SCHNELLHEFT')).toHaveLength(8)
+})
+
+it('paart Müller-Zeilen auch, wenn Live Text die Spalten trennt', () => {
+  const r = parseReceiptText(`
+    Müller
+    Stk Artikel
+    1 MAY MASCARA LASH SE
+    1 LOREAL REVITALIFT F
+    1 KATJES SAUER GRUEN
+    12,99 12,99a
+    5,95 5,95a
+    1,39 1,39b
+    ZU BEZAHLEN 20,33
+  `)
+  expect(r.lines.map((l) => [l.rawText, l.quantity, l.priceCents])).toEqual([
+    ['MAY MASCARA LASH SE', 1, 1299],
+    ['LOREAL REVITALIFT F', 1, 595],
+    ['KATJES SAUER GRUEN', 1, 139],
+  ])
+})
