@@ -244,3 +244,15 @@ describe('PDF-eBons (echter Text aus pdf.js, ohne Adresse/Zahlungsdaten)', () =>
 it('erkennt den Laden an der Kopfzeile, nicht an Produktnamen', () => {
   expect(parseReceiptText('Kaufland\nMüllermilch 1,49 B\nSumme 1,49').store).toBe('Kaufland')
 })
+
+it('Lidl (echte Bilderkennung): Lidl-Plus-Rabatte werden mit dem Artikel verrechnet', async () => {
+  const { readFileSync } = await import('node:fs')
+  const r = parseReceiptText(readFileSync(new URL('./fixtures/lidl-bild-2026-11-02.txt', import.meta.url), 'utf8'))
+  expect(r.store).toBe('Lidl')
+  expect(r.date).toBe('2026-11-02')
+  expect(r.totalCents).toBe(1182)
+  expect(r.lines).toHaveLength(12)
+  expect(r.lines.reduce((s, l) => s + l.priceCents, 0)).toBe(1182)
+  expect(r.lines[0]).toEqual({ rawText: 'Biol. Apfel rot 600g', quantity: 1, priceCents: 149 })
+  expect(r.lines.filter((l) => l.rawText.startsWith('Pfand'))).toHaveLength(2)
+})
