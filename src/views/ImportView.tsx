@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { db } from '../db/schema'
+import { Icon } from '../components/Icon'
 import { applyImport, parseAmazonExport, planImport, type ImportPlan } from '../import/amazon'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
@@ -42,7 +43,7 @@ export function ImportView() {
 
   const picker = (
     <>
-      <button onClick={() => input.current?.click()}>Datei auswählen</button>
+      <button onClick={() => input.current?.click()}><Icon name="file" size={18} />Datei auswählen</button>
       <input
         ref={input}
         type="file"

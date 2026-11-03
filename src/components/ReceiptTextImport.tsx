@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { compressImage } from '../lib/image'
 import { parseReceiptText, type ParsedReceipt } from '../receipts/parse'
+import { Icon } from './Icon'
 
 type Photo = { type: string; data: ArrayBuffer }
 
@@ -64,12 +65,16 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt, p
     <section className="card">
       <h2>Bon einlesen</h2>
       <p className="muted small">
-        Bild aus der Händler-App (z. B. Müller) oder PDF-eBon (z. B. Penny) wählen. Die Erkennung läuft
-        auf deinem Gerät. Beim ersten Mal werden einmalig ca. 5 MB geladen.
+        Bild (z. B. Müller, Lidl) oder PDF-eBon (z. B. Kaufland, Penny) wählen. Die Erkennung läuft auf
+        deinem Gerät – beim ersten Mal werden einmalig ca. 5 MB geladen.
       </p>
-      <div className="button-row compact">
-        <button type="button" className="secondary" onClick={() => imageInput.current?.click()} disabled={busy}>🖼️ Bon-Bild</button>
-        <button type="button" className="secondary" onClick={() => pdfInput.current?.click()} disabled={busy}>📄 PDF-Bon</button>
+      <div className="import-tiles">
+        <button type="button" className="import-tile" onClick={() => imageInput.current?.click()} disabled={busy}>
+          <Icon name="image" size={28} /><span>Bon-Bild</span>
+        </button>
+        <button type="button" className="import-tile" onClick={() => pdfInput.current?.click()} disabled={busy}>
+          <Icon name="file" size={28} /><span>PDF-Bon</span>
+        </button>
         <input ref={imageInput} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && readImage(e.target.files[0])} />
         <input ref={pdfInput} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => e.target.files?.[0] && readPdf(e.target.files[0])} />
       </div>
@@ -82,7 +87,9 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt, p
       )}
 
       {info && (
-        <div className={`import-status ${info.kind === 'ok' ? 'ok-text' : 'warn'}`} role="status">
+        <div className={`import-status status-box ${info.kind === 'ok' ? 'ok-text' : 'warn'}`} role="status">
+          <Icon name={info.kind === 'ok' ? 'check' : 'alert'} size={18} />
+          <div>
           {info.text}
           {info.skipped && info.skipped.length > 0 && (
             <details className="warnings">
@@ -96,6 +103,7 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt, p
               <pre className="raw-text">{info.raw}</pre>
             </details>
           )}
+          </div>
         </div>
       )}
     </section>
