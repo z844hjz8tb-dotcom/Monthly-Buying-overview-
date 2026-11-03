@@ -1,52 +1,61 @@
 import { useRef, useState } from 'react'
+import { compressImage } from '../lib/image'
 import { parseReceiptText, type ParsedReceipt } from '../receipts/parse'
 
-/**
- * Bon aus Text (iPhone Live Text, kopiert aus einer App) oder aus einem PDF-eBon einlesen.
- */
-export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt) => void }) {
-  const [open, setOpen] = useState(false)
-  const [text, setText] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [info, setInfo] = useState<{ kind: 'ok' | 'error'; text: string; skipped?: string[] } | null>(null)
-  const pdfInput = useRef<HTMLInputElement>(null)
+type Photo = { type: string; data: ArrayBuffer }
 
-  function run(source: string) {
-    const r = parseReceiptText(source)
+/**
+ * Bon aus einem Bild (z. B. Müller-App) oder einem PDF-eBon (z. B. Penny) einlesen.
+ * Beides läuft lokal im Browser.
+ */
+export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt, photo?: Photo) => void }) {
+  const [progress, setProgress] = useState<{ phase: string; pct: number } | null>(null)
+  const [info, setInfo] = useState<{ kind: 'ok' | 'error'; text: string; skipped?: string[]; raw?: string } | null>(null)
+  const imageInput = useRef<HTMLInputElement>(null)
+  const pdfInput = useRef<HTMLInputElement>(null)
+  const busy = progress !== null
+
+  function apply(text: string, photo?: Photo) {
+    const r = parseReceiptText(text)
     if (r.lines.length === 0) {
-      setInfo({ kind: 'error', text: 'Keine Artikel mit Preis erkannt. Ist der ganze Bon-Text enthalten?', skipped: r.skipped })
+      setInfo({ kind: 'error', text: 'Keine Artikel mit Preis erkannt. Ist der ganze Bon zu sehen?', skipped: r.skipped, raw: text })
       return
     }
-    onParsed(r)
+    onParsed(r, photo)
     const parts = [`${r.lines.length} Artikel erkannt`]
     if (r.store) parts.push(r.store)
     if (r.totalCents !== undefined) parts.push('Summe gefunden')
-    setInfo({ kind: 'ok', text: parts.join(' · ') + '. Bitte unten prüfen.', skipped: r.skipped })
-    setOpen(false)
-    setText('')
+    setInfo({ kind: 'ok', text: parts.join(' · ') + '. Bitte unten prüfen.', skipped: r.skipped, raw: text })
   }
 
-  async function pasteFromClipboard() {
+  async function readImage(file: File) {
+    setInfo(null)
+    setProgress({ phase: 'Starte', pct: 0 })
     try {
-      const t = await navigator.clipboard.readText()
-      if (t.trim()) return run(t)
-      setOpen(true)
-    } catch {
-      // Zugriff verweigert oder nicht unterstützt -> Textfeld zum manuellen Einfügen
-      setOpen(true)
+      const { imageToText } = await import('../receipts/ocr')
+      const [text, photo] = await Promise.all([
+        imageToText(file, (p, phase) => setProgress({ phase, pct: Math.round(p * 100) })),
+        compressImage(file),
+      ])
+      apply(text, photo)
+    } catch (e) {
+      setInfo({ kind: 'error', text: `Bild konnte nicht gelesen werden: ${e instanceof Error ? e.message : String(e)}` })
+    } finally {
+      setProgress(null)
+      if (imageInput.current) imageInput.current.value = ''
     }
   }
 
   async function readPdf(file: File) {
-    setBusy(true)
     setInfo(null)
+    setProgress({ phase: 'Lese PDF', pct: 0 })
     try {
       const { pdfToText } = await import('../receipts/pdf')
-      run(await pdfToText(file))
+      apply(await pdfToText(file))
     } catch (e) {
       setInfo({ kind: 'error', text: `PDF konnte nicht gelesen werden: ${e instanceof Error ? e.message : String(e)}` })
     } finally {
-      setBusy(false)
+      setProgress(null)
       if (pdfInput.current) pdfInput.current.value = ''
     }
   }
@@ -55,30 +64,20 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt) =
     <section className="card">
       <h2>Bon einlesen</h2>
       <p className="muted small">
-        Bon-Text aus einer App oder per Live Text (Foto/Screenshot gedrückt halten → „Alles auswählen“ → „Kopieren“) einfügen, oder einen PDF-eBon wählen.
+        Bild aus der Händler-App (z. B. Müller) oder PDF-eBon (z. B. Penny) wählen. Die Erkennung läuft
+        auf deinem Gerät. Beim ersten Mal werden einmalig ca. 5 MB geladen.
       </p>
       <div className="button-row compact">
-        <button type="button" className="secondary" onClick={pasteFromClipboard} disabled={busy}>📋 Text einfügen</button>
-        <button type="button" className="secondary" onClick={() => pdfInput.current?.click()} disabled={busy}>
-          {busy ? 'Lese PDF…' : '📄 PDF-Bon'}
-        </button>
+        <button type="button" className="secondary" onClick={() => imageInput.current?.click()} disabled={busy}>🖼️ Bon-Bild</button>
+        <button type="button" className="secondary" onClick={() => pdfInput.current?.click()} disabled={busy}>📄 PDF-Bon</button>
+        <input ref={imageInput} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && readImage(e.target.files[0])} />
         <input ref={pdfInput} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => e.target.files?.[0] && readPdf(e.target.files[0])} />
       </div>
 
-      {open && (
-        <div className="inline-form">
-          <textarea
-            className="paste-area"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Bon-Text hier einfügen…"
-            rows={8}
-            autoFocus
-          />
-          <div className="button-row">
-            <button type="button" onClick={() => run(text)} disabled={!text.trim()}>Auslesen</button>
-            <button type="button" className="secondary" onClick={() => setOpen(false)}>Abbrechen</button>
-          </div>
+      {progress && (
+        <div className="progress" role="status" aria-live="polite">
+          <span>{progress.phase}… {progress.pct > 0 && `${progress.pct} %`}</span>
+          <span className="progress-bar"><span style={{ width: `${progress.pct}%` }} /></span>
         </div>
       )}
 
@@ -89,6 +88,12 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt) =
             <details className="warnings">
               <summary>{info.skipped.length} Zeilen nicht übernommen</summary>
               <ul>{info.skipped.map((s, i) => <li key={i}>{s}</li>)}</ul>
+            </details>
+          )}
+          {info.raw && (
+            <details className="warnings">
+              <summary>Erkannten Text anzeigen</summary>
+              <pre className="raw-text">{info.raw}</pre>
             </details>
           )}
         </div>

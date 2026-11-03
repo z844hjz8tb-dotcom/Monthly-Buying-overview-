@@ -401,3 +401,7 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
   resize: vertical;
 }
 .import-status { font-size: 0.9rem; margin-top: 8px; }
+.progress { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 0.9rem; color: var(--muted); }
+.progress-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.progress-bar span { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+.raw-text { white-space: pre-wrap; font: 0.75rem ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: var(--bg); padding: 8px; border-radius: 8px; max-height: 50vh; overflow: auto; user-select: text; }

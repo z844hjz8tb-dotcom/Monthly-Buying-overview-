@@ -1,5 +1,4 @@
 MH Müller Handels GmbH, Albstraße 92, 89081 Ulm
-Willy-Brand-Straße 21, 97877 Wertheim, +49 9342 9664997
 
 Stk Artikel             Preis Nachlass  Summe
   1 ABLAGEKORB A4 ROT     2,59            2,59a
@@ -54,8 +53,3 @@ Stk Artikel             Preis Nachlass  Summe
      Kartenzahlung              EUR       61,94
 
 Datum:                     18.08.2026
-Uhrzeit:                 12:12:09 Uhr
-Beleg-Nr.                      6429
-Betrag EUR                    61,94
-    MwSt %        Netto  MwSt.Betr.     Brutto
-    a:19,00        52,05       9,89      61,94

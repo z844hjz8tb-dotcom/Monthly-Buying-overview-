@@ -98,7 +98,8 @@ export function ReceiptEditor() {
     setLines((ls) => (ls.length > 1 ? ls.filter((l) => l.key !== key) : ls))
   }
 
-  function applyParsed(r: ParsedReceipt) {
+  function applyParsed(r: ParsedReceipt, photo?: { type: string; data: ArrayBuffer }) {
+    if (photo) setImage(photo)
     if (r.store && !store.trim()) setStore(r.store)
     if (r.date) setDate(r.date)
     if (r.totalCents !== undefined) setTotal(centsToInput(r.totalCents))
