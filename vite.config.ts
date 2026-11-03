@@ -12,7 +12,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest,woff2}'],
         // Texterkennung (~5 MB) nicht vorab laden, sondern beim ersten Gebrauch speichern
         globIgnores: ['ocr/**'],
         runtimeCaching: [

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
+import { Icon } from '../components/Icon'
 import { suggestName, suggestProducts, type Candidate } from '../normalize/match'
 import { assign, loadAliasMap, openGroups, type OpenGroup } from '../receipts/store'
 import { formatDay } from '../stats/spending'
@@ -33,12 +34,13 @@ export function AssignView() {
           Ordne Bontexte einem Produkt zu, damit gleiche Artikel aus verschiedenen Läden zusammen
           gezählt werden. Die App merkt sich jede Zuordnung für künftige Bons.
         </p>
-        <Link to="/produkte" className="text-link">Produkte verwalten ›</Link>
+        <Link to="/produkte" className="text-link">Produkte verwalten<Icon name="right" size={16} /></Link>
       </section>
 
       {data.groups.length === 0 ? (
         <section className="card empty">
-          <p>✓ Alles zugeordnet.</p>
+          <div className="empty-icon"><Icon name="check" size={28} /></div>
+          <p>Alles zugeordnet.</p>
           <Link className="button secondary" to="/bons">Zu den Bons</Link>
         </section>
       ) : (
@@ -77,7 +79,7 @@ function AssignCard({ group, candidates }: { group: OpenGroup; candidates: Candi
             </div>
           )}
           <div className="button-row compact">
-            <button className="secondary" onClick={() => setMode('new')}>+ Neu</button>
+            <button className="secondary" onClick={() => setMode('new')}><Icon name="plus" size={16} />Neu</button>
             {candidates.length > 0 && <button className="secondary" onClick={() => setMode('pick')}>Vorhandenes…</button>}
             <button className="secondary muted-btn" onClick={() => run({ ignore: true })} title="z. B. Pfand, Tüte, Rabatt">
               Ignorieren

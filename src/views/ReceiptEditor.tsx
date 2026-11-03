@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { compressImage } from '../lib/image'
+import { Icon } from '../components/Icon'
 import { formatCents, parseEuroToCents } from '../lib/money'
 import { ReceiptTextImport } from '../components/ReceiptTextImport'
 import type { ParsedReceipt } from '../receipts/parse'
@@ -189,7 +190,7 @@ export function ReceiptEditor() {
               </div>
             </>
           ) : (
-            <button type="button" className="secondary" onClick={() => photoInput.current?.click()}>📷 Foto vom Bon</button>
+            <button type="button" className="secondary" onClick={() => photoInput.current?.click()}><Icon name="camera" size={18} />Foto vom Bon</button>
           )}
           <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => e.target.files?.[0] && pickPhoto(e.target.files[0])} />
         </div>
@@ -232,7 +233,7 @@ export function ReceiptEditor() {
                   }}
                 />
                 {!isLast && (
-                  <button type="button" className="line-remove" aria-label="Zeile entfernen" onClick={() => removeLine(l.key)}>✕</button>
+                  <button type="button" className="line-remove" aria-label="Zeile entfernen" onClick={() => removeLine(l.key)}><Icon name="x" size={18} /></button>
                 )}
                 {alias && l.rawText.trim() && (
                   <span className="line-product">
@@ -256,15 +257,15 @@ export function ReceiptEditor() {
             Abweichung: {formatCents(diff)}. Fehlt ein Artikel oder ist ein Preis vertippt?
           </p>
         )}
-        {diff === 0 && parsed.length > 0 && <p className="ok-text">✓ Summe stimmt</p>}
+        {diff === 0 && parsed.length > 0 && <p className="status-box ok-text"><Icon name="check" size={18} />Summe stimmt</p>}
       </section>
 
       {error && <p className="toast error" role="alert">{error}</p>}
 
       <div className="button-row sticky-actions">
-        <button onClick={save} disabled={busy}>Speichern</button>
+        <button onClick={save} disabled={busy}><Icon name="check" size={18} />Speichern</button>
         <button className="secondary" onClick={() => navigate(-1)}>Abbrechen</button>
-        {id !== undefined && <button className="danger" onClick={remove}>Löschen</button>}
+        {id !== undefined && <button className="danger" onClick={remove} aria-label="Löschen"><Icon name="trash" size={18} /></button>}
       </div>
 
       {zoom && imageUrl && (

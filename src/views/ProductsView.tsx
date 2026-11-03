@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Alias, type Product } from '../db/schema'
 import { unassign } from '../receipts/store'
+import { Icon } from '../components/Icon'
 
 export function ProductsView() {
   const data = useLiveQuery(async () => {
@@ -64,7 +65,7 @@ function ProductCard({ product, aliases }: { product: Product; aliases: Alias[] 
           </div>
         </form>
       ) : (
-        <button className="plain-title" onClick={() => setEditing(true)}>{product.canonicalName} ✎</button>
+        <button className="plain-title" onClick={() => setEditing(true)}>{product.canonicalName}<Icon name="pencil" size={16} /></button>
       )}
       <AliasList aliases={aliases} />
     </section>
@@ -78,7 +79,7 @@ function AliasList({ aliases }: { aliases: Alias[] }) {
       {aliases.map((a) => (
         <li key={a.id}>
           <span><span className="muted small">{a.store}:</span> {a.rawText}</span>
-          <button className="line-remove" aria-label={`${a.rawText} entfernen`} onClick={() => unassign(db, a.id!)}>✕</button>
+          <button className="line-remove" aria-label={`${a.rawText} entfernen`} onClick={() => unassign(db, a.id!)}><Icon name="x" size={18} /></button>
         </li>
       ))}
     </ul>

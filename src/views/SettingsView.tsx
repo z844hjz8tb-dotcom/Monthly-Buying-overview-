@@ -3,6 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, TABLES } from '../db/schema'
 import { backupFileName, createBackup, parseBackup, restoreBackup } from '../db/backup'
 import { downloadJson } from '../lib/download'
+import { getLook, LOOKS, setLook, type LookId } from '../lib/look'
+import { Icon } from '../components/Icon'
 import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
 import { buildDemoExport, buildDemoReceipts, DEMO_PREFIX } from '../import/demo'
 import { deleteReceipt, saveReceipt } from '../receipts/store'
@@ -11,6 +13,7 @@ type Message = { kind: 'ok' | 'error'; text: string } | null
 
 export function SettingsView() {
   const [message, setMessage] = useState<Message>(null)
+  const [look, setLookState] = useState<LookId>(getLook)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const lastBackup = useLiveQuery(() => db.meta.get('lastBackupAt'))
@@ -84,6 +87,26 @@ export function SettingsView() {
     <>
       {message && <p className={`toast ${message.kind}`} role="status">{message.text}</p>}
       <section className="card">
+        <h2>Design</h2>
+        <p className="muted small">Gilt nur auf diesem Gerät.</p>
+        <div className="look-grid" role="radiogroup" aria-label="Farbwelt">
+          {LOOKS.map((l) => (
+            <button
+              key={l.id}
+              role="radio"
+              aria-checked={look === l.id}
+              className={`look-option${look === l.id ? ' active' : ''}`}
+              onClick={() => { setLook(l.id); setLookState(l.id) }}
+            >
+              <span className="look-swatch" style={{ background: `linear-gradient(145deg, ${l.swatch[0]}, ${l.swatch[1]} 55%, ${l.swatch[2]} 130%)` }} />
+              {l.name}
+              <small>{l.hint}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
         <h2>Backup</h2>
         <p className="muted">
           Deine Daten liegen nur auf diesem Gerät. Lade regelmäßig ein Backup herunter, z. B. nach
@@ -94,8 +117,9 @@ export function SettingsView() {
           {lastBackup ? new Date(lastBackup.value).toLocaleString('de-DE') : 'noch keins'}
         </p>
         <div className="button-row">
-          <button onClick={exportBackup}>Backup herunterladen</button>
+          <button onClick={exportBackup}><Icon name="save" size={18} />Backup herunterladen</button>
           <button className="secondary" onClick={() => fileInput.current?.click()}>
+            <Icon name="upload" size={18} />
             Backup einspielen
           </button>
           <input
@@ -129,7 +153,7 @@ export function SettingsView() {
           ohne echte Daten anzufassen.
         </p>
         <div className="button-row">
-          <button className="secondary" onClick={loadDemo}>Beispieldaten laden</button>
+          <button className="secondary" onClick={loadDemo}><Icon name="sparkles" size={18} />Beispieldaten laden</button>
           {!!demoCount && (
             <button className="secondary" onClick={removeDemo}>Beispieldaten entfernen ({demoCount})</button>
           )}
@@ -138,7 +162,7 @@ export function SettingsView() {
 
       <section className="card">
         <h2>Alles löschen</h2>
-        <button className="danger" onClick={deleteAll}>Alle Daten löschen</button>
+        <button className="danger" onClick={deleteAll}><Icon name="trash" size={18} />Alle Daten löschen</button>
       </section>
 
     </>

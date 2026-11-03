@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
+import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
 import { countsAsSpending, formatDay, formatMonth, itemRows, shiftMonth, type ItemRow } from '../stats/spending'
 
@@ -49,18 +50,21 @@ export function MonthView() {
 
   return (
     <>
-      <nav className="month-nav" aria-label="Monat wechseln">
-        <Link to={`/monat/${prevKey}`} aria-label="Vormonat">‹</Link>
-        <h2>{formatMonth(key)}</h2>
-        <Link to={`/monat/${shiftMonth(key, 1)}`} aria-label="Folgemonat">›</Link>
-      </nav>
-
-      <section className="card">
-        <p className="big-number">{formatCents(total)}</p>
-        <p className="muted">
-          {spending.length} Bestellungen
+      <section className="hero">
+        <nav className="month-switch" aria-label="Monat wechseln">
+          <Link className="round-btn" to={`/monat/${prevKey}`} aria-label="Vormonat"><Icon name="left" /></Link>
+          <h2>{formatMonth(key)}</h2>
+          <Link className="round-btn" to={`/monat/${shiftMonth(key, 1)}`} aria-label="Folgemonat"><Icon name="right" /></Link>
+        </nav>
+        <p className="hero-label">Amazon-Ausgaben</p>
+        <p className="hero-number">{formatCents(total)}</p>
+        <p className="hero-sub">
+          <span className="pill">{spending.length} Bestellungen</span>
           {data.prevTotal > 0 && (
-            <> · {delta >= 0 ? '+' : '−'}{formatCents(Math.abs(delta))} zum Vormonat</>
+            <span className="pill">
+              <Icon name={delta > 0 ? 'up' : 'down'} size={14} />
+              {delta >= 0 ? '+' : '−'}{formatCents(Math.abs(delta))} zum Vormonat
+            </span>
           )}
         </p>
       </section>
@@ -73,13 +77,16 @@ export function MonthView() {
             <option value="price">Teuerste zuerst</option>
           </select>
         </div>
-        <input
-          type="search"
-          className="search"
-          placeholder="Artikel suchen…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="search-wrap">
+          <Icon name="search" size={18} />
+          <input
+            type="search"
+            className="search"
+            placeholder="Artikel suchen…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
         {rows.length === 0 ? (
           <p className="muted empty-hint">{query ? 'Keine Treffer.' : 'In diesem Monat gibt es keine Bestellungen.'}</p>
         ) : (

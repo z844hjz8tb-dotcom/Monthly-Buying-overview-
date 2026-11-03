@@ -7,21 +7,44 @@ import { ReceiptsView } from './views/ReceiptsView'
 import { ReceiptEditor } from './views/ReceiptEditor'
 import { AssignView } from './views/AssignView'
 import { ProductsView } from './views/ProductsView'
+import { Icon, type IconName } from './components/Icon'
 
-const NAV: { to: string; label: string; icon: string; also?: string[] }[] = [
-  { to: '/uebersicht', label: 'Amazon', icon: '📦', also: ['/monat'] },
-  { to: '/bons', label: 'Bons', icon: '🧾', also: ['/bon/', '/zuordnen', '/produkte'] },
-  { to: '/import', label: 'Import', icon: '📥' },
-  { to: '/einstellungen', label: 'Daten', icon: '⚙️' },
+const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
+  { to: '/uebersicht', label: 'Amazon', icon: 'package', also: ['/monat'] },
+  { to: '/bons', label: 'Bons', icon: 'receipt', also: ['/bon/', '/zuordnen', '/produkte'] },
+  { to: '/import', label: 'Import', icon: 'download' },
+  { to: '/einstellungen', label: 'Daten', icon: 'database' },
 ]
+
+/** Seitentitel in der Kopfzeile, passend zur Route */
+const TITLES: [string, string][] = [
+  ['/bon/neu', 'Neuer Bon'],
+  ['/bon/', 'Bon'],
+  ['/bons', 'Kassenbons'],
+  ['/zuordnen', 'Zuordnen'],
+  ['/produkte', 'Produkte'],
+  ['/monat', 'Amazon'],
+  ['/uebersicht', 'Amazon'],
+  ['/import', 'Import'],
+  ['/einstellungen', 'Daten & Design'],
+]
+
+function Header() {
+  const { pathname } = useLocation()
+  const title = TITLES.find(([p]) => pathname.startsWith(p))?.[1] ?? 'Ausgaben'
+  return (
+    <header className="app-header">
+      <span className="logo-mark" aria-hidden="true"><Icon name="up" size={18} /></span>
+      <h1>{title}</h1>
+    </header>
+  )
+}
 
 export default function App() {
   return (
     <HashRouter>
       <div className="app">
-        <header className="app-header">
-          <h1>Ausgaben</h1>
-        </header>
+        <Header />
         <main className="app-main">
           <Routes>
             <Route path="/uebersicht" element={<OverviewView />} />
@@ -51,7 +74,7 @@ function BottomNav() {
         const active = pathname.startsWith(n.to) || (n.also ?? []).some((p) => pathname.startsWith(p))
         return (
           <NavLink key={n.to} to={n.to} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
-            <span aria-hidden="true">{n.icon}</span>
+            <Icon name={n.icon} size={22} />
             <span>{n.label}</span>
           </NavLink>
         )
