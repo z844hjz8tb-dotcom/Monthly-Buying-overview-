@@ -2,7 +2,7 @@
 
 Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (Phase 1), danach Kassenbons aus Lebensmittel- und Drogerieeinkäufen (Phase 2).
 
-## Aktueller Stand (03.11.2026)
+## Aktueller Stand (03.11.2026, abends)
 
 **Live:** https://z844hjz8tb-dotcom.github.io/Monthly-Buying-overview-/ (Deploy bei jedem Push auf `main`)
 
@@ -12,11 +12,12 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 - Bon einlesen: 🖼️ Bon-Bild (lokale OCR) und 📄 PDF-Bon – an echten Bons aller vier Läden geprüft, Summe jeweils auf den Cent:
   Müller-Bild (46 + 7 Artikel), Lidl-Bild (12), Kaufland-PDF (93), Penny-PDF (74)
 - Backup/Wiederherstellung (inkl. Fotos), Beispieldaten, Erinnerungshinweis nach 30 Tagen ohne Import
+- Design (PR #10): Hero-Bereiche mit großer Summe, eigene Icons, Schrift Plus Jakarta Sans, schwebende Navigation, Laden-Avatare, Top-Artikel mit Rang und Anteilsbalken. Drei Farbwelten unter „Daten & Design“: **Frisch** (Standard), **Sonne**, **Abend** (immer dunkel); pro Gerät gespeichert. Nutzer hat noch keine Farbwelt als Favorit gewählt.
 
 **Nutzer:** iPhone, Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern).
+1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
 4. Später: Abgleich der Top-Artikel mit Prospektangeboten; optional KI für Fotos von Papierbons.

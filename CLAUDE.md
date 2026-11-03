@@ -14,9 +14,11 @@ Persönliche PWA (React + TypeScript + Vite, Dexie/IndexedDB) für Amazon-Ausgab
 - `src/receipts/parse.ts` – Bon-Leser für alle Läden; jede Anpassung mit Testfall in `tests/parse.test.ts`
 - `src/receipts/ocr.ts`, `src/receipts/pdf.ts` – lokale Bild- bzw. PDF-Texterkennung
 - `src/receipts/store.ts`, `src/normalize/match.ts` – Zuordnung Bontext → Produkt
+- `src/index.css` – alle Farben als Variablen je Farbwelt (`data-look` auf `<html>`: frisch, sonne, abend); `src/lib/look.ts` wählt sie, `src/components/Icon.tsx` enthält die Icons
 - `tests/fixtures/` – echte Bon-Texte, **ohne Adressen, Karten- und Zahlungsdaten** (Repo ist öffentlich)
 
 ## Arbeitsweise
 - Mobile-first (Nutzer verwendet ein iPhone); UI-Änderungen in Playwright mit iPhone-Emulation prüfen.
 - Feature-Branch → PR → Squash-Merge nach `main` → Deploy-Lauf (GitHub Actions) prüfen.
 - Beträge immer in ganzen Cent.
+- Neue Farben nur als Variablen in allen drei Farbwelten (hell und dunkel) anlegen; keine Emojis als Icons, sondern `<Icon>`.
