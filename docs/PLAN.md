@@ -53,7 +53,7 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats | ✅ |
 | M7a | Bon-Leser + PDF-eBons (pdf.js, lokal) | ✅ |
 | M7b | Bon-Bilder lokal auslesen (tesseract.js, deutsch) | ✅ Müller getestet (46/46 und 7/7 Artikel) |
-| M7c | Echte Bons prüfen | ✅ Kaufland-PDF (93 Artikel), Penny-PDF (74 Artikel) · ⏳ Lidl |
+| M7c | Echte Bons prüfen | ✅ Müller-Bild, Kaufland-PDF, Penny-PDF, Lidl-Bild |
 | M7d | Optional: KI-Erkennung für Fotos von Papierbons | offen |
 | später | Abgleich der Top-Artikel mit Prospektangeboten | – |
 
