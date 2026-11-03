@@ -2,6 +2,29 @@
 
 Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (Phase 1), danach Kassenbons aus Lebensmittel- und Drogerieeinkäufen (Phase 2).
 
+## Aktueller Stand (03.11.2026)
+
+**Live:** https://z844hjz8tb-dotcom.github.io/Monthly-Buying-overview-/ (Deploy bei jedem Push auf `main`)
+
+**Fertig**
+- Amazon: Import der Export-Datei mit Duplikat-Erkennung, Jahres-/Monatsansicht, Artikelliste (mit Beispieldaten getestet; das Skript fehlt noch)
+- Kassenbons: Erfassung, Foto, Summenprüfung, Zuordnen mit Vorschlägen, Produkte verwalten, Top-Artikel mit günstigstem Laden
+- Bon einlesen: 🖼️ Bon-Bild (lokale OCR) und 📄 PDF-Bon – an echten Bons aller vier Läden geprüft, Summe jeweils auf den Cent:
+  Müller-Bild (46 + 7 Artikel), Lidl-Bild (12), Kaufland-PDF (93), Penny-PDF (74)
+- Backup/Wiederherstellung (inkl. Fotos), Beispieldaten, Erinnerungshinweis nach 30 Tagen ohne Import
+
+**Nutzer:** iPhone, Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
+
+**Nächste Schritte**
+1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern).
+2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
+3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
+4. Später: Abgleich der Top-Artikel mit Prospektangeboten; optional KI für Fotos von Papierbons.
+
+**Hinweise**
+- Die Repo ist öffentlich. Testdateien enthalten keine Adressen/Zahlungsdaten – bei neuen Bons genauso bereinigen. In der Git-Historie (PR #5) steht noch eine Müller-Filialadresse; Entfernen wurde angeboten, nicht entschieden.
+- Arbeitsweise: Feature-Branch → PR → Squash-Merge nach `main` (vom Nutzer so gewünscht), danach Deploy-Lauf prüfen.
+
 ## Entscheidungen
 
 | Thema | Entscheidung |
@@ -12,7 +35,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 | Speicher | IndexedDB über Dexie.js, Beträge als ganze Cent |
 | Routing | HashRouter (funktioniert ohne Server-Konfiguration auf GitHub Pages) |
 | Tests | Vitest (+ fake-indexeddb) |
-| Bon-Erkennung (Phase 2) | **offen**: lokal (Tesseract.js) oder Claude Vision API |
+| Bon-Erkennung (Phase 2) | Lokal: pdf.js für PDF-eBons, tesseract.js für Bilder. iPhone Live Text verworfen (unvollständig). KI nur noch optional für Papierfotos |
 
 ## Datenmodell
 
