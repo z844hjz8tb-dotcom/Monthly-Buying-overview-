@@ -2,6 +2,7 @@ import { HashRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { OverviewView } from './views/OverviewView'
 import { ImportView } from './views/ImportView'
 import { SettingsView } from './views/SettingsView'
+import { MonthView } from './views/MonthView'
 
 const NAV = [
   { to: '/uebersicht', label: 'Übersicht', icon: '📊' },
@@ -19,6 +20,7 @@ export default function App() {
         <main className="app-main">
           <Routes>
             <Route path="/uebersicht" element={<OverviewView />} />
+            <Route path="/monat/:key" element={<MonthView />} />
             <Route path="/import" element={<ImportView />} />
             <Route path="/einstellungen" element={<SettingsView />} />
             <Route path="*" element={<Navigate to="/uebersicht" replace />} />

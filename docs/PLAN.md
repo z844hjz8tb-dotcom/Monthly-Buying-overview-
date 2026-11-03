@@ -46,12 +46,37 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | # | Inhalt | Status |
 |---|---|---|
 | M1 | Projektgerüst, Datenbank, Backup-Export/-Import, PWA, GitHub-Pages-Deployment | ✅ |
-| M2 | Amazon-Konsolen-Skript (paginiert, lädt Detailseiten für Einzelpreise, Selektoren im `CONFIG`-Block, Prüfbericht am Ende) | ⏳ |
-| M3 | Import mit Vorschau ("neu / aktualisiert / unverändert") und Duplikat-Erkennung | ⏳ |
-| M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ⏳ |
+| M2 | Amazon-Konsolen-Skript (paginiert, lädt Detailseiten für Einzelpreise, Selektoren im `CONFIG`-Block, Prüfbericht am Ende) | ⏳ wartet auf gespeicherte Amazon-Seiten |
+| M3 | Import mit Vorschau ("neu / aktualisiert / unverändert") und Duplikat-Erkennung | ✅ |
+| M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ✅ (mit Beispieldaten getestet) |
 | M5 | Kassenbon-Erfassung (Foto/PDF) mit Prüf-Ansicht (Summe der Zeilen = Bon-Summe?) | ⏳ |
 | M6 | Normalisierung (Alias-Tabelle, Vorschläge per Fuzzy-Match, lernt aus Bestätigungen), Top-Artikel des Monats → **Phase 2 fertig** | ⏳ |
 | später | Abgleich der Top-Artikel mit Prospektangeboten | – |
+
+## Austauschformat Amazon-Skript → App
+
+Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`):
+
+```json
+{
+  "format": "ausgaben-tracker-amazon",
+  "version": 1,
+  "exportedAt": "2026-12-01T08:00:00Z",
+  "orders": [
+    {
+      "orderId": "302-1234567-1234567",
+      "date": "2026-11-02",
+      "totalCents": 2498,
+      "status": "ok",
+      "items": [{ "title": "USB-C Kabel", "quantity": 2, "unitPriceCents": 999, "asin": "B0..." }]
+    }
+  ]
+}
+```
+
+- `status`: `ok` (Standard), `cancelled` oder `returned`. Die beiden letzten zählen nicht zu den Ausgaben.
+- `unitPriceCents` darf `null` sein, wenn das Skript keinen Preis findet. Die Bestellsumme zählt trotzdem.
+- Monats- und Jahressummen basieren auf `totalCents` (inkl. Versand).
 
 ## Amazon-Skript: bekannte Risiken
 

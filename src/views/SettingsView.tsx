@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/schema'
+import { db, TABLES } from '../db/schema'
 import { backupFileName, createBackup, parseBackup, restoreBackup } from '../db/backup'
 import { downloadJson } from '../lib/download'
+import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
+import { buildDemoExport, DEMO_PREFIX } from '../import/demo'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
 
@@ -11,6 +13,29 @@ export function SettingsView() {
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const lastBackup = useLiveQuery(() => db.meta.get('lastBackupAt'))
+  const demoCount = useLiveQuery(() => db.orders.where('orderId').startsWith(DEMO_PREFIX).count())
+
+  async function loadDemo() {
+    const { orders } = parseAmazonExport(JSON.stringify(buildDemoExport()))
+    await applyImport(db, await planImport(db, orders))
+    setMessage({ kind: 'ok', text: `${orders.length} Beispiel-Bestellungen geladen. Schau in die Übersicht.` })
+  }
+
+  async function removeDemo() {
+    await db.transaction('rw', db.orders, db.orderItems, async () => {
+      await db.orders.where('orderId').startsWith(DEMO_PREFIX).delete()
+      await db.orderItems.where('orderId').startsWith(DEMO_PREFIX).delete()
+    })
+    setMessage({ kind: 'ok', text: 'Beispieldaten entfernt.' })
+  }
+
+  async function deleteAll() {
+    if (!confirm('Wirklich ALLE Daten auf diesem Gerät löschen? Das lässt sich nur mit einem Backup rückgängig machen.')) return
+    await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
+      for (const t of TABLES) await db.table(t).clear()
+    })
+    setMessage({ kind: 'ok', text: 'Alle Daten wurden gelöscht.' })
+  }
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null))
@@ -49,6 +74,7 @@ export function SettingsView() {
 
   return (
     <>
+      {message && <p className={`toast ${message.kind}`} role="status">{message.text}</p>}
       <section className="card">
         <h2>Backup</h2>
         <p className="muted">
@@ -88,7 +114,25 @@ export function SettingsView() {
         )}
       </section>
 
-      {message && <p className={`toast ${message.kind}`} role="status">{message.text}</p>}
+      <section className="card">
+        <h2>Beispieldaten</h2>
+        <p className="muted">
+          Erfundene Amazon-Bestellungen zum Ausprobieren. Sie lassen sich jederzeit wieder entfernen,
+          ohne echte Daten anzufassen.
+        </p>
+        <div className="button-row">
+          <button className="secondary" onClick={loadDemo}>Beispieldaten laden</button>
+          {!!demoCount && (
+            <button className="secondary" onClick={removeDemo}>Beispieldaten entfernen ({demoCount})</button>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>Alles löschen</h2>
+        <button className="danger" onClick={deleteAll}>Alle Daten löschen</button>
+      </section>
+
     </>
   )
 }
