@@ -1,0 +1,97 @@
+*** PENNY-MARKT GMBH ***
+Musterweg - Str. 1
+12345 Musterstadt
+UID Nr.: DE123456789
+EUR
+BAYR.LEBERK.FEIN   3,49 B
+MINI WIENER   2,49 B
+KABA CLASSIC   1,98 B
+2 Stk x   0,99
+BUTTERK&EMM   2,69 B
+BIO HIRTENKAESE   2,19 B
+PATROS HIRTKR..   2,99 B
+Laugenbrezel   0,39 B
+Buttertoast   0,89 B
+Reiswaff. ZB   1,69 B
+Kuchen Marmor   1,69 B
+Bürger Maultasch   4,58 B
+2 Stk x   2,29
+App-Preis-Rabatt   -1,20 B
+Apfel rot   2,69 B
+Himbeeren   2,29 B
+Kartoffeln 2,5kg   2,49 B
+Feldsalat   1,29 B
+Cherry Romatom.   1,19 B
+Gurke   1,58 B
+2 Stk x   0,79
+DILL   1,49 B
+Milprima BUTTER   1,19 B
+LAEKKERGARDEN   1,19 B
+H-Alpenmilch 1,5   1,49 B
+SKYR NATUR   2,98 B
+2 Stk x   1,49
+Rama Cremefine   0,99 B
+DESSERT M. SAHNE   0,39 B
+Berida Wildlachs   3,79 B
+McCain Golden Lo   2,99 B
+BUTTERGEMUESE   0,99 B
+Rios Sandwich Cl   1,99 B
+Rios Eishörnchen   1,99 B
+Ferrero Eis   3,89 B
+Corny Haferkraft   2,39 B
+Maggi Fix   2,18 B
+2 Stk x   1,09
+Maggi Fix   1,09 B
+KNUSPER FISCH   1,09 B
+KNUSP.SCHAFSK.   2,18 B
+2 Stk x   1,09
+Knorr Kräuter   0,79 B
+Würz&Co Gartenkr   0,49 B
+Thomy Hollan.Leg   1,69 B
+DUO COOKIE CREME   2,99 B
+Greenland Champ.   0,79 B
+SF Passierte Tom   0,65 B
+SALZBREZELN   0,89 B
+CHEESE CRACKER   1,49 B
+PISTAZIEN XXL   3,59 B
+SCHOGETTEN ZIMT   1,11 B
+WS KOKOS TAFEL   0,99 B
+TAFEL M. PISTAZ.   1,11 B
+SCHOKOLADE LINSE   0,89 B
+COOKIE UND CREAM   0,65 B
+SCHOGETTEN CHURR   1,11 B
+Kinder Schokolad   1,69 B
+SCHOK. BREZEL   1,49 B
+Choco la Rosinen   1,69 B
+MAOAM 10 er   1,19 B
+FRUTIVITY JOGH.   0,99 B
+FLOWER SAUER   0,79 B
+HARIBO SAURE POM   0,79 B
+BUNTE TUETE   0,79 B
+HARIBO BERRIES   0,79 B
+HARIBO ERDBEEREN   0,79 B
+Coca Cola Zero   1,39 A
+PFAND 0,25 EURO   0,25 A *
+Fanta Orange   3,38 A
+2 Stk x   1,69
+PFAND 0,25 EURO   0,50 A *
+2 Stk x   0,25
+FANTA ZERO PK GR   1,69 A
+PFAND 0,25 EURO   0,25 A *
+GOENRGY   1,98 A
+2 Stk x   0,99
+PFAND 0,25 EURO   0,50 A *
+2 Stk x   0,25
+MARLBORO GOLD   12,00 A *
+Lavazza Classico   13,99 B
+App-Preis-Rabatt   -1,00 B
+KRAUETER TEE   4,38 B
+2 Stk x   2,19
+Mayfair Kamillen   1,78 B
+2 Stk x   0,89
+Domestos WC Gel   1,99 A
+Happy End Küro   2,99 A
+--------------------------------------
+SUMME   EUR   145,99
+
+Datum:   06.10.2026
