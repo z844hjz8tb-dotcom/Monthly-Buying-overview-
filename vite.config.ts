@@ -10,6 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest}'] },
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Ausgaben-Tracker',

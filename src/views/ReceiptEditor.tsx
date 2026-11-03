@@ -4,6 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { compressImage } from '../lib/image'
 import { formatCents, parseEuroToCents } from '../lib/money'
+import { ReceiptTextImport } from '../components/ReceiptTextImport'
+import type { ParsedReceipt } from '../receipts/parse'
 import { aliasKey, deleteReceipt, KNOWN_STORES, loadAliasMap, saveReceipt, type ReceiptInput } from '../receipts/store'
 
 interface LineDraft {
@@ -38,6 +40,7 @@ export function ReceiptEditor() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [zoom, setZoom] = useState(false)
+  const [source, setSource] = useState<ReceiptInput['source']>('manual')
   const photoInput = useRef<HTMLInputElement>(null)
   const lastLineInput = useRef<HTMLInputElement>(null)
 
@@ -51,6 +54,7 @@ export function ReceiptEditor() {
       if (!r) return navigate('/bons', { replace: true })
       const ls = await db.receiptLines.where('receiptId').equals(id).sortBy('id')
       setStore(r.store)
+      setSource(r.source)
       setDate(r.date)
       setTotal(centsToInput(r.totalCents))
       setLines([
@@ -94,6 +98,20 @@ export function ReceiptEditor() {
     setLines((ls) => (ls.length > 1 ? ls.filter((l) => l.key !== key) : ls))
   }
 
+  function applyParsed(r: ParsedReceipt) {
+    if (r.store && !store.trim()) setStore(r.store)
+    if (r.date) setDate(r.date)
+    if (r.totalCents !== undefined) setTotal(centsToInput(r.totalCents))
+    const imported = r.lines.map((l) => ({
+      key: nextKey++,
+      rawText: l.rawText,
+      qty: String(l.quantity),
+      price: centsToInput(l.priceCents),
+    }))
+    setLines((ls) => [...ls.filter((l) => l.rawText.trim()), ...imported, emptyLine()])
+    setSource('app')
+  }
+
   async function pickPhoto(file: File) {
     try {
       setImage(await compressImage(file))
@@ -117,7 +135,7 @@ export function ReceiptEditor() {
         store,
         date,
         totalCents: totalCents ?? linesSum,
-        source: shownImage ? 'photo' : 'manual',
+        source: source === 'app' ? 'app' : shownImage ? 'photo' : 'manual',
         lines: parsed.map((l) => ({ ...l, priceCents: l.priceCents! })),
         image,
       })
@@ -139,6 +157,8 @@ export function ReceiptEditor() {
 
   return (
     <>
+      {id === undefined && <ReceiptTextImport onParsed={applyParsed} />}
+
       <section className="card">
         <h2>{id === undefined ? 'Neuer Bon' : 'Bon bearbeiten'}</h2>
         <label className="field">

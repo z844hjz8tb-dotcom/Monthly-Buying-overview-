@@ -1,7 +1,7 @@
 import type { Alias, Product, Receipt, ReceiptLine, TrackerDB } from '../db/schema'
 import { normalizeRaw } from '../normalize/match'
 
-export const KNOWN_STORES = ['Lidl', 'Rewe', 'Kaufland', 'Penny', 'Aldi', 'Netto', 'Edeka', 'dm', 'Rossmann']
+export const KNOWN_STORES = ['Lidl', 'Kaufland', 'Penny', 'Müller', 'Rewe', 'Aldi', 'Netto', 'Edeka', 'dm', 'Rossmann']
 
 /** "  lidl " -> "Lidl"; unbekannte Läden bleiben, wie eingegeben. */
 export function canonicalStore(input: string): string {
