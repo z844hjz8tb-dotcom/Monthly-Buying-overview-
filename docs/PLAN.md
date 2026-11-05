@@ -21,11 +21,11 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. **H2–H4 Importe ING, Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (CSV) vom Nutzer.
+1. **H2–H4 Importe ING, Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (CSV). Die Exporte gehen nur über die Webseiten am Laptop, nicht in den Apps → kommt, wenn der Nutzer am Laptop ist (zusammen mit den Amazon-Seiten für M2). Für ING am besten ein Girokonto-Export mit Umbuchung aufs Extra-Konto und einer Sparplan-Ausführung.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
-3. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
+3. **M2 Amazon-Konsolen-Skript** – ebenfalls Laptop: wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-5. Danach H5 (Verknüpfung Amazon/Bons ↔ Buchungen), H6 (Fixkosten & Kredite), H7 (verschlüsseltes Backup).
+5. Ohne Laptop machbar: H6 (Fixkosten & Kredite, manuell), H7 (verschlüsseltes Backup), Erinnerung am Monatsersten. H5 (Verknüpfung Amazon/Bons ↔ Buchungen) sinnvoll erst nach den Importen.
 6. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
