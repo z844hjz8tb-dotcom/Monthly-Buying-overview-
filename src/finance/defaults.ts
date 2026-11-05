@@ -24,6 +24,18 @@ export const FALLBACK_CATEGORY = 'sonstiges'
 /** Drogerien: Bons dieser Läden zählen als "Drogerie", alle anderen als "Lebensmittel" */
 export const DRUGSTORES = ['Müller', 'dm', 'Rossmann']
 
+export const ACCOUNT_KINDS: { id: Account['kind']; name: string }[] = [
+  { id: 'giro', name: 'Girokonto' },
+  { id: 'savings', name: 'Tagesgeld' },
+  { id: 'depot', name: 'Depot' },
+  { id: 'credit', name: 'Kreditkarte' },
+  { id: 'paypal', name: 'PayPal' },
+  { id: 'cash', name: 'Bargeld' },
+]
+
+/** Zahlungskonten (Alltag) vs. Spar- und Anlagekonten */
+export const isSavingsKind = (kind: Account['kind']) => kind === 'savings' || kind === 'depot'
+
 /** Legt fehlende Standardkonten und -kategorien an; bestehende (ggf. umbenannte) bleiben unverändert. */
 export async function ensureDefaults(db: TrackerDB): Promise<void> {
   await db.transaction('rw', db.accounts, db.categories, async () => {

@@ -89,5 +89,22 @@ export function buildDemoTransactions(year = 2026): Omit<Transaction, 'id' | 'cr
     t('amex', '11-03', -1399, 'Netflix', 'expense', 'abos'),
     t('bar', '11-03', -420, 'Bäckerei', 'expense', 'lebensmittel'),
     t('amex', '11-04', -5890, 'Tankstelle', 'expense', 'mobilitaet'),
+    t('ing', '11-04', 1234, 'Dividende ETF', 'income'),
+  ]
+}
+
+/** Erfundene Spar- und Depotkonten (werden mit den Beispieldaten angelegt und wieder entfernt). */
+export const DEMO_ACCOUNTS = [
+  { id: 'demo-extra', name: 'Extra-Konto (Beispiel)', kind: 'savings' as const, order: 90, demo: true },
+  { id: 'demo-depot', name: 'Depot (Beispiel)', kind: 'depot' as const, order: 91, countsAsSaving: true, demo: true },
+  { id: 'demo-aktien', name: 'Aktienkonto (Beispiel)', kind: 'depot' as const, order: 92, countsAsSaving: true, balanceCents: 412050, balanceDate: '2026-11-01', demo: true },
+]
+
+/** Erfundene Umbuchungen: Rücklage aufs Extra-Konto (zählt nicht) und ETF-Sparplan (zählt als Gespart). */
+export function buildDemoTransfers(year = 2026) {
+  return [
+    { fromAccountId: 'ing', toAccountId: 'demo-depot', date: `${year}-10-02`, cents: 20000, counterparty: 'ETF-Sparplan', demo: true },
+    { fromAccountId: 'ing', toAccountId: 'demo-depot', date: `${year}-11-02`, cents: 20000, counterparty: 'ETF-Sparplan', demo: true },
+    { fromAccountId: 'ing', toAccountId: 'demo-extra', date: `${year}-11-03`, cents: 50000, counterparty: 'Rücklage', demo: true },
   ]
 }

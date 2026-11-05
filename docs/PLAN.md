@@ -16,7 +16,9 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Haushaltsbuch H1 (PR #14): neue **Übersicht** als Startbildschirm (alle Ausgaben des Monats nach Kategorie über Buchungen, Amazon und Bons; Einnahmen; Vergleich zum Vormonat; Kacheln je Quelle), **Konten** (ING, Amex, PayPal, Bargeld) mit Buchungen je Monat, **Buchung von Hand** (Ausgabe/Einnahme/Umbuchung). Datenbank-Version 3. Navigation: Übersicht · Konten · Amazon · Bons · Daten.
 
-**Nutzer:** iPhone, Girokonto ING, Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
+- Haushaltsbuch H1b: **Konten verwalten** (anlegen, Art, IBAN, Schalter „Geld hierhin zählt als Sparen“, manueller Stand, ausblenden), **Umbuchung von → nach** als zwei verbundene Buchungen, **„Gespart“ getrennt neben den Ausgaben** (Sparquote, Karte „Gespart“ je Zielkonto), Kontenliste getrennt in „Alltag“ und „Sparen & Anlagen“.
+
+**Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
 1. **H2–H4 Importe ING, Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (CSV) vom Nutzer.
@@ -43,6 +45,17 @@ Ziel: Alle Ausgaben an einem Ort – Girokonto (ING), Kreditkarte (American Expr
 | **Bons** | wie bisher (Details zu Supermarkt-Buchungen) |
 | **Fixkosten & Kredite** | Monatliche Raten, Abos, Miete; aus dem Girokonto erkannt oder von Hand angelegt |
 | **Import & Daten** | alle Importe an einer Stelle, Backup, Design |
+
+### Umbuchungen und Sparen (festgelegt 05.11.2026)
+| Bewegung | Zählt als |
+|---|---|
+| Giro ↔ Extra-Konto (Tagesgeld) | gar nicht (Umbuchung) |
+| auf ein Konto mit „Geld hierhin zählt als Sparen“ (Standard: Depot; z. B. auch Kinderkonten) | **„Gespart“**, getrennt neben den Ausgaben |
+| zurück von so einem Konto | mindert „Gespart“, ist keine Einnahme |
+| Dividenden, Zinsen | Einnahme |
+| Uptevia | nur aufgelistet mit manuellem Stand, keine Buchungen |
+
+Technik: Umbuchung = zwei Buchungen (`kind` "transfer" oder "saving", `transferAccountId`, gegenseitige `pairId`); gezählt wird nur die Seite auf dem Alltagskonto.
 
 ### Grundregel gegen Doppelzählung
 Geld zählt **einmal, dort wo es das Konto verlässt**. Alles andere wird damit verknüpft:
@@ -85,7 +98,8 @@ Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (
 | # | Inhalt | Status |
 |---|---|---|
 | H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine | ✅ |
-| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln | ⏳ |
+| H1b | Konten verwalten, Umbuchungen von/nach, Sparen getrennt („Gespart“), manueller Stand | ✅ |
+| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln; Umbuchungen über eigene IBANs erkennen und Gegenbuchungen verbinden; ETF-Sparplan als Sparen | ⏳ |
 | H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung | ⏳ |
 | H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
 | H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen | ⏳ |
