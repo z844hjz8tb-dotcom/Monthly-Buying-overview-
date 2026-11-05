@@ -2,7 +2,7 @@
 
 Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (Phase 1), danach Kassenbons aus Lebensmittel- und Drogerieeinkäufen (Phase 2).
 
-## Aktueller Stand (03.11.2026, abends)
+## Aktueller Stand (05.11.2026)
 
 **Live:** https://z844hjz8tb-dotcom.github.io/Monthly-Buying-overview-/ (Deploy bei jedem Push auf `main`)
 
@@ -14,14 +14,17 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 - Backup/Wiederherstellung (inkl. Fotos), Beispieldaten, Erinnerungshinweis nach 30 Tagen ohne Import
 - Design (PR #10): Hero-Bereiche mit großer Summe, eigene Icons, Schrift Plus Jakarta Sans, schwebende Navigation, Laden-Avatare, Top-Artikel mit Rang und Anteilsbalken. Drei Farbwelten unter „Daten & Design“: **Frisch** (Standard), **Sonne**, **Abend** (immer dunkel); pro Gerät gespeichert. Nutzer hat noch keine Farbwelt als Favorit gewählt.
 
-**Nutzer:** iPhone, Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
+- Haushaltsbuch H1 (PR #14): neue **Übersicht** als Startbildschirm (alle Ausgaben des Monats nach Kategorie über Buchungen, Amazon und Bons; Einnahmen; Vergleich zum Vormonat; Kacheln je Quelle), **Konten** (ING, Amex, PayPal, Bargeld) mit Buchungen je Monat, **Buchung von Hand** (Ausgabe/Einnahme/Umbuchung). Datenbank-Version 3. Navigation: Übersicht · Konten · Amazon · Bons · Daten.
+
+**Nutzer:** iPhone, Girokonto ING, Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
-2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
-3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-4. **Phase 3 Haushaltsbuch** – H1 fertig (Übersicht, Konten, Buchungen von Hand). Weiter mit H2–H4, sobald Beispieldateien von ING, Amex und PayPal da sind.
-5. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
+1. **H2–H4 Importe ING, Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (CSV) vom Nutzer.
+2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
+3. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
+4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
+5. Danach H5 (Verknüpfung Amazon/Bons ↔ Buchungen), H6 (Fixkosten & Kredite), H7 (verschlüsseltes Backup).
+6. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
 - Die Repo ist öffentlich. Testdateien enthalten keine Adressen/Zahlungsdaten – bei neuen Bons genauso bereinigen. In der Git-Historie (PR #5) steht noch eine Müller-Filialadresse; Entfernen wurde angeboten, nicht entschieden.
