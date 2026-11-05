@@ -7,6 +7,7 @@ import { formatCents } from '../lib/money'
 import { formatMonth, monthKey, shiftMonth } from '../stats/spending'
 import { monthOverview } from '../stats/overview'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
+import { isSavingsKind } from '../finance/defaults'
 
 const currentMonth = () => monthKey(new Date().toISOString())
 
@@ -24,12 +25,13 @@ export function HomeView() {
     const range = (k: string) => [`${k}-01`, `${k}-31`] as const
     const load = async (k: string) => {
       const [from, to] = range(k)
-      const [transactions, orders, receipts] = await Promise.all([
+      const [transactions, orders, receipts, accounts] = await Promise.all([
         db.transactions.where('date').between(from, to, true, true).toArray(),
         db.orders.where('date').between(from, to, true, true).toArray(),
         db.receipts.where('date').between(from, to, true, true).toArray(),
+        db.accounts.toArray(),
       ])
-      return monthOverview(k, { transactions, orders, receipts })
+      return monthOverview(k, { transactions, orders, receipts, accounts })
     }
     const [cur, prev] = await Promise.all([load(key), load(prevKey)])
     return { cur, prev }
@@ -43,7 +45,7 @@ export function HomeView() {
   const empty = cur.byCategory.length === 0
 
   const sources = [
-    ...refs.accounts.map((a) => ({ id: a.id, name: a.name, icon: accountIcon(a.kind), to: `/konto/${a.id}/${key}` })),
+    ...refs.visibleAccounts.filter((a) => !isSavingsKind(a.kind)).map((a) => ({ id: a.id, name: a.name, icon: accountIcon(a.kind), to: `/konto/${a.id}/${key}` })),
     { id: 'amazon', name: 'Amazon', icon: 'package' as const, to: `/monat/${key}` },
     { id: 'bons', name: 'Kassenbons', icon: 'receipt' as const, to: `/bons/${key}` },
   ]
@@ -56,10 +58,23 @@ export function HomeView() {
           <h2>{formatMonth(key)}</h2>
           <Link className="round-btn" to={`/start/${shiftMonth(key, 1)}`} aria-label="Folgemonat"><Icon name="right" /></Link>
         </nav>
-        <p className="hero-label">Ausgaben gesamt</p>
-        <p className="hero-number">{formatCents(cur.expenseCents)}</p>
+        <div className="hero-split">
+          <div>
+            <p className="hero-label">Ausgaben</p>
+            <p className="hero-number">{formatCents(cur.expenseCents)}</p>
+          </div>
+          {cur.savingCents !== 0 && (
+            <div className="saved">
+              <p className="hero-label"><Icon name="piggy" size={14} />Gespart</p>
+              <p className="saved-number">{formatCents(cur.savingCents)}</p>
+            </div>
+          )}
+        </div>
         <p className="hero-sub">
           {cur.incomeCents > 0 && <span className="pill"><Icon name="income" size={14} />Einnahmen {formatCents(cur.incomeCents)}</span>}
+          {cur.savingCents > 0 && cur.incomeCents > 0 && (
+            <span className="pill">Sparquote {Math.round((cur.savingCents / cur.incomeCents) * 100)} %</span>
+          )}
           {prev.expenseCents > 0 && (
             <span className="pill">
               <Icon name={delta > 0 ? 'up' : 'down'} size={14} />
@@ -98,6 +113,32 @@ export function HomeView() {
                   <span className="share" style={{ marginLeft: 54 }} aria-hidden="true">
                     <span style={{ width: `${Math.max(3, (c.cents / max) * 100)}%`, background: categoryColor(cat) }} />
                   </span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
+      {Object.keys(cur.savingByAccount).length > 0 && (
+        <section className="card">
+          <div className="card-head">
+            <h2>Gespart</h2>
+            <span className="row-amount">{formatCents(cur.savingCents)}</span>
+          </div>
+          <ul className="rows">
+            {Object.entries(cur.savingByAccount).sort((a, b) => b[1] - a[1]).map(([accId, cents]) => {
+              const acc = refs.accountById.get(accId)
+              return (
+                <li key={accId}>
+                  <Link to={`/konto/${accId}/${key}`} className="row-link">
+                    <span className="avatar cat" style={{ background: 'var(--cat-1)' }} aria-hidden="true"><Icon name={acc ? accountIcon(acc.kind) : 'piggy'} size={20} /></span>
+                    <div className="row-main">
+                      <span className="row-title">{acc?.name ?? 'Spar-Konto'}</span>
+                      <span className="row-sub muted">{cents < 0 ? 'Entnahme' : 'eingezahlt'}</span>
+                    </div>
+                    <span className="row-amount">{cents < 0 ? '−' : ''}{formatCents(Math.abs(cents))}</span>
+                  </Link>
                 </li>
               )
             })}

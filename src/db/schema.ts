@@ -74,11 +74,22 @@ export interface Alias {
 }
 
 /** Konto: Girokonto, Kreditkarte, PayPal oder Bargeld. id ist ein fester Schlüssel, z. B. "ing". */
+export type AccountKind = 'giro' | 'savings' | 'depot' | 'credit' | 'paypal' | 'cash'
+
 export interface Account {
   id: string
   name: string
-  kind: 'giro' | 'credit' | 'paypal' | 'cash'
+  kind: AccountKind
   order: number
+  /** Für die automatische Erkennung von Umbuchungen beim Import (ab H2) */
+  iban?: string
+  /** Geld, das auf dieses Konto fließt, zählt als "Gespart" (Standard bei Depots) */
+  countsAsSaving?: boolean
+  /** Manuell gepflegter Kontostand, z. B. für ein Aktienkonto ohne Buchungen */
+  balanceCents?: number
+  balanceDate?: string
+  hidden?: boolean
+  demo?: boolean
 }
 
 /** Ausgabenkategorie. id ist ein fester Schlüssel, z. B. "lebensmittel". */
@@ -103,7 +114,11 @@ export interface Transaction {
   counterparty: string
   purpose?: string
   categoryId?: string
-  kind: 'expense' | 'income' | 'transfer'
+  /**
+   * expense/income: Ausgabe/Einnahme. transfer: Umbuchung zwischen eigenen Konten (zählt nicht).
+   * saving: Geld fließt auf ein Spar-Konto (oder zurück) – zählt als "Gespart", nicht als Ausgabe.
+   */
+  kind: 'expense' | 'income' | 'transfer' | 'saving'
   source: 'manual' | 'ing' | 'amex' | 'paypal'
   /** Schlüssel gegen doppelten Import (nur bei importierten Buchungen) */
   importKey?: string
@@ -112,6 +127,9 @@ export interface Transaction {
   linkedReceiptId?: number
   /** Diese Buchung ist nur die Abbuchung einer anderen (z. B. PayPal) und zählt nicht selbst */
   viaTransactionId?: number
+  /** Bei Umbuchung/Sparen: das andere Konto und die Gegenbuchung dort */
+  transferAccountId?: string
+  pairId?: number
   createdAt: string
   demo?: boolean
 }

@@ -108,3 +108,80 @@ it('Konten und Kategorien lassen sich nach Reihenfolge sortieren', async () => {
   expect((await db.categories.orderBy('order').last())?.id).toBe('sonstiges')
   await db.delete()
 })
+
+describe('Umbuchungen und Sparen', () => {
+  const accounts = [
+    { id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 },
+    { id: 'extra', name: 'Extra', kind: 'savings' as const, order: 2 },
+    { id: 'depot', name: 'Depot', kind: 'depot' as const, order: 3, countsAsSaving: true },
+    { id: 'kind', name: 'Kinder', kind: 'savings' as const, order: 4, countsAsSaving: true },
+  ]
+
+  it('zählt Umbuchungen gar nicht und Sparen getrennt (nur die Alltags-Seite)', () => {
+    const o = monthOverview('2026-11', {
+      accounts,
+      orders: [],
+      receipts: [],
+      transactions: [
+        tx({ id: 1, accountId: 'ing', amountCents: -50000, kind: 'transfer', transferAccountId: 'extra', pairId: 2 }),
+        tx({ id: 2, accountId: 'extra', amountCents: 50000, kind: 'transfer', transferAccountId: 'ing', pairId: 1 }),
+        tx({ id: 3, accountId: 'ing', amountCents: -20000, kind: 'saving', transferAccountId: 'depot', pairId: 4 }),
+        tx({ id: 4, accountId: 'depot', amountCents: 20000, kind: 'saving', transferAccountId: 'ing', pairId: 3 }),
+        tx({ id: 5, accountId: 'extra', amountCents: -5000, kind: 'saving', transferAccountId: 'kind', pairId: 6 }),
+        tx({ id: 6, accountId: 'kind', amountCents: 5000, kind: 'saving', transferAccountId: 'extra', pairId: 5 }),
+        tx({ id: 7, accountId: 'ing', amountCents: 1234, kind: 'income', counterparty: 'Dividende' }),
+        tx({ id: 8, accountId: 'ing', amountCents: -1000, categoryId: 'freizeit' }),
+      ],
+    })
+    expect(o.expenseCents).toBe(1000)
+    expect(o.incomeCents).toBe(1234)
+    expect(o.savingCents).toBe(25000)
+    expect(o.savingByAccount).toEqual({ depot: 20000, kind: 5000 })
+  })
+
+  it('Geld zurück vom Depot mindert "Gespart" und ist keine Einnahme', () => {
+    const o = monthOverview('2026-11', {
+      accounts,
+      orders: [],
+      receipts: [],
+      transactions: [
+        tx({ id: 1, accountId: 'depot', amountCents: -30000, kind: 'saving', transferAccountId: 'ing', pairId: 2 }),
+        tx({ id: 2, accountId: 'ing', amountCents: 30000, kind: 'saving', transferAccountId: 'depot', pairId: 1 }),
+      ],
+    })
+    expect(o.incomeCents).toBe(0)
+    expect(o.savingCents).toBe(-30000)
+  })
+})
+
+describe('Umbuchung speichern', () => {
+  it('legt zwei verbundene Buchungen an, aktualisiert und löscht beide', async () => {
+    const { saveTransfer, deleteTransaction, transferKind } = await import('../src/finance/store')
+    const db = new TrackerDB('transfer-test')
+    await ensureDefaults(db)
+    await db.accounts.bulkAdd([
+      { id: 'extra', name: 'Extra-Konto', kind: 'savings', order: 5 },
+      { id: 'depot', name: 'Depot', kind: 'depot', order: 6, countsAsSaving: true },
+    ])
+    expect(transferKind({}, { countsAsSaving: true })).toBe('saving')
+    expect(transferKind({}, {})).toBe('transfer')
+
+    const id = await saveTransfer(db, { fromAccountId: 'ing', toAccountId: 'extra', date: '2026-11-05', cents: 50000, counterparty: '' })
+    let rows = await db.transactions.toArray()
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => [r.accountId, r.amountCents, r.kind])).toEqual([['ing', -50000, 'transfer'], ['extra', 50000, 'transfer']])
+    expect(rows[0].pairId).toBe(rows[1].id)
+    expect(rows[1].pairId).toBe(rows[0].id)
+    expect(rows[0].counterparty).toBe('Umbuchung ING Girokonto → Extra-Konto')
+
+    await saveTransfer(db, { id, fromAccountId: 'ing', toAccountId: 'depot', date: '2026-11-06', cents: 20000, counterparty: 'ETF-Sparplan' })
+    rows = await db.transactions.toArray()
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => [r.accountId, r.amountCents, r.kind])).toEqual([['ing', -20000, 'saving'], ['depot', 20000, 'saving']])
+
+    await deleteTransaction(db, rows[1].id!)
+    expect(await db.transactions.count()).toBe(0)
+    await expect(saveTransfer(db, { fromAccountId: 'ing', toAccountId: 'ing', date: '2026-11-06', cents: 1, counterparty: '' })).rejects.toThrow(/verschiedene/)
+    await db.delete()
+  })
+})
