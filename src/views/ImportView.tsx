@@ -73,7 +73,7 @@ export function ImportView() {
             Import abgeschlossen: {state.added} neu, {state.updated} aktualisiert.
           </p>
           <div className="button-row">
-            <Link className="button" to="/uebersicht">Zur Übersicht</Link>
+            <Link className="button" to="/uebersicht">Zu Amazon</Link>
             <Link className="button secondary" to="/einstellungen">Backup machen</Link>
           </div>
         </section>

@@ -1,5 +1,6 @@
 import { AMAZON_EXPORT_FORMAT, type AmazonExport } from './amazon'
 import type { ReceiptInput } from '../receipts/store'
+import type { Transaction } from '../db/schema'
 
 /** Erfundene Beispieldaten zum Ausprobieren. Bestellnummern beginnen mit "DEMO-". */
 export const DEMO_PREFIX = 'DEMO-'
@@ -65,5 +66,28 @@ export function buildDemoReceipts(year = 2026): ReceiptInput[] {
     r('Lidl', '11-01', [['H-VOLLM. 3,5%', 2, 198], ['BANANEN', 1, 125], ['TOAST WEIZEN', 1, 89], ['TOMATEN RISPE', 1, 179]]),
     r('Kaufland', '11-02', [['K-CL. H-MILCH 3,5', 2, 198], ['BUTTER DT.MARKEN', 1, 189], ['SPIRELLI 500G', 1, 79], ['ZAHNPASTA', 1, 95]]),
     r('Rewe', '11-03', [['Vollmilch 3,5% 1L', 1, 119], ['Bio Bananen', 1, 199], ['Tomaten Rispe', 1, 249], ['Tragetasche', 1, 25]]),
+  ]
+}
+
+
+/** Erfundene Buchungen (Konto, feste Kosten, Abos) für Oktober und November. */
+export function buildDemoTransactions(year = 2026): Omit<Transaction, 'id' | 'createdAt'>[] {
+  const t = (accountId: string, date: string, amountCents: number, counterparty: string, kind: Transaction['kind'], categoryId?: string) =>
+    ({ accountId, date: `${year}-${date}`, amountCents, counterparty, kind, categoryId, source: 'manual' as const, demo: true })
+  return [
+    t('ing', '10-01', 250000, 'Gehalt Musterfirma', 'income'),
+    t('ing', '10-01', -85000, 'Miete Wohnung', 'expense', 'wohnen'),
+    t('ing', '10-02', -25000, 'Autokredit Musterbank', 'expense', 'kredite'),
+    t('ing', '10-05', -650, 'Haftpflichtversicherung', 'expense', 'versicherungen'),
+    t('amex', '10-08', -1399, 'Netflix', 'expense', 'abos'),
+    t('amex', '10-14', -6512, 'Tankstelle', 'expense', 'mobilitaet'),
+    t('paypal', '10-20', -2400, 'Kino', 'expense', 'freizeit'),
+    t('ing', '10-28', -7911, 'American Express Abrechnung', 'transfer'),
+    t('ing', '11-01', 250000, 'Gehalt Musterfirma', 'income'),
+    t('ing', '11-01', -85000, 'Miete Wohnung', 'expense', 'wohnen'),
+    t('ing', '11-02', -25000, 'Autokredit Musterbank', 'expense', 'kredite'),
+    t('amex', '11-03', -1399, 'Netflix', 'expense', 'abos'),
+    t('bar', '11-03', -420, 'Bäckerei', 'expense', 'lebensmittel'),
+    t('amex', '11-04', -5890, 'Tankstelle', 'expense', 'mobilitaet'),
   ]
 }

@@ -60,6 +60,9 @@ export function OverviewView() {
           {activeMonths > 0 && <span className="pill">Ø {formatCents(Math.round(yearTotal / activeMonths))} / Monat</span>}
         </p>
         <YearChart months={months} highlight={currentMonth} />
+        <div className="hero-actions">
+          <Link className="button on-hero ghost" to="/import"><Icon name="download" size={18} />Amazon-Datei importieren</Link>
+        </div>
       </section>
 
       {importAgeDays > REMIND_AFTER_DAYS && (

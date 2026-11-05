@@ -20,14 +20,14 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-4. **Phase 3 Haushaltsbuch** (ING, Amex, PayPal, Fixkosten) – Entwurf siehe unten, wartet auf Freigabe und Beispieldateien.
+4. **Phase 3 Haushaltsbuch** – H1 fertig (Übersicht, Konten, Buchungen von Hand). Weiter mit H2–H4, sobald Beispieldateien von ING, Amex und PayPal da sind.
 5. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
 - Die Repo ist öffentlich. Testdateien enthalten keine Adressen/Zahlungsdaten – bei neuen Bons genauso bereinigen. In der Git-Historie (PR #5) steht noch eine Müller-Filialadresse; Entfernen wurde angeboten, nicht entschieden.
 - Arbeitsweise: Feature-Branch → PR → Squash-Merge nach `main` (vom Nutzer so gewünscht), danach Deploy-Lauf prüfen.
 
-## Phase 3: Haushaltsbuch (Entwurf 05.11.2026, wartet auf Freigabe)
+## Phase 3: Haushaltsbuch (freigegeben 05.11.2026)
 
 Ziel: Alle Ausgaben an einem Ort – Girokonto (ING), Kreditkarte (American Express), PayPal, Bargeld, feste Kosten und Kreditraten – ergänzt um die Details aus Amazon und Kassenbons. Weiterhin ohne Bank-Zugangsdaten: Import per Export-Datei, einmal im Monat.
 
@@ -79,15 +79,15 @@ Nur die monatliche Rate (kein Restschuld-/Zinsplan). Die App schlägt wiederkehr
 Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (WebCrypto, AES-GCM). Daten bleiben weiterhin nur auf dem Gerät.
 
 ### Meilensteine
-| # | Inhalt |
-|---|---|
-| H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine |
-| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln |
-| H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung |
-| H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex |
-| H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen |
-| H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau |
-| H7 | Verschlüsseltes Backup |
+| # | Inhalt | Status |
+|---|---|---|
+| H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine | ✅ |
+| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln | ⏳ |
+| H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung | ⏳ |
+| H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
+| H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen | ⏳ |
+| H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau | ⏳ |
+| H7 | Verschlüsseltes Backup | ⏳ |
 
 Benötigt vom Nutzer: je eine Beispiel-Exportdatei von ING, Amex und PayPal (gern geschwärzt).
 

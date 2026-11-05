@@ -73,6 +73,70 @@ export interface Alias {
   ignored?: boolean
 }
 
+/** Konto: Girokonto, Kreditkarte, PayPal oder Bargeld. id ist ein fester Schlüssel, z. B. "ing". */
+export interface Account {
+  id: string
+  name: string
+  kind: 'giro' | 'credit' | 'paypal' | 'cash'
+  order: number
+}
+
+/** Ausgabenkategorie. id ist ein fester Schlüssel, z. B. "lebensmittel". */
+export interface Category {
+  id: string
+  name: string
+  icon: string
+  /** Name der Farbvariable, z. B. "cat-1" → var(--cat-1) */
+  color: string
+  order: number
+}
+
+/**
+ * Eine Buchung auf einem Konto. Beträge in Cent, negativ = Geld geht raus.
+ * kind "transfer" = Umbuchung zwischen eigenen Konten (zählt nicht als Ausgabe).
+ */
+export interface Transaction {
+  id?: number
+  accountId: string
+  date: string
+  amountCents: number
+  counterparty: string
+  purpose?: string
+  categoryId?: string
+  kind: 'expense' | 'income' | 'transfer'
+  source: 'manual' | 'ing' | 'amex' | 'paypal'
+  /** Schlüssel gegen doppelten Import (nur bei importierten Buchungen) */
+  importKey?: string
+  /** Verknüpfungen gegen Doppelzählung (ab H4/H5) */
+  linkedOrderId?: string
+  linkedReceiptId?: number
+  /** Diese Buchung ist nur die Abbuchung einer anderen (z. B. PayPal) und zählt nicht selbst */
+  viaTransactionId?: number
+  createdAt: string
+  demo?: boolean
+}
+
+/** Regel: Text in Empfänger/Verwendungszweck → Kategorie (ab H2) */
+export interface CategoryRule {
+  id?: number
+  pattern: string
+  field: 'counterparty' | 'purpose'
+  categoryId: string
+}
+
+/** Feste monatliche Kosten, z. B. Kreditrate oder Abo (ab H6) */
+export interface Recurring {
+  id?: number
+  name: string
+  amountCents: number
+  dayOfMonth: number
+  start: string
+  end?: string
+  categoryId: string
+  accountId: string
+  matchPattern?: string
+}
+
 export interface Meta {
   key: string
   value: string
@@ -87,6 +151,11 @@ export class TrackerDB extends Dexie {
   products!: EntityTable<Product, 'id'>
   aliases!: EntityTable<Alias, 'id'>
   meta!: EntityTable<Meta, 'key'>
+  accounts!: EntityTable<Account, 'id'>
+  categories!: EntityTable<Category, 'id'>
+  transactions!: EntityTable<Transaction, 'id'>
+  categoryRules!: EntityTable<CategoryRule, 'id'>
+  recurring!: EntityTable<Recurring, 'id'>
 
   constructor(name = 'ausgaben-tracker') {
     super(name)
@@ -103,6 +172,13 @@ export class TrackerDB extends Dexie {
       receiptLines: '++id, receiptId',
       receiptImages: 'receiptId',
     })
+    this.version(3).stores({
+      accounts: 'id, order',
+      categories: 'id, order',
+      transactions: '++id, accountId, date, &importKey, linkedOrderId, linkedReceiptId',
+      categoryRules: '++id, categoryId',
+      recurring: '++id',
+    })
   }
 }
 
@@ -115,6 +191,11 @@ export const TABLES = [
   'products',
   'aliases',
   'meta',
+  'accounts',
+  'categories',
+  'transactions',
+  'categoryRules',
+  'recurring',
 ] as const
 
 export type TableName = (typeof TABLES)[number]

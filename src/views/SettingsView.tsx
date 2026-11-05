@@ -6,7 +6,9 @@ import { downloadJson } from '../lib/download'
 import { getLook, LOOKS, setLook, type LookId } from '../lib/look'
 import { Icon } from '../components/Icon'
 import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
-import { buildDemoExport, buildDemoReceipts, DEMO_PREFIX } from '../import/demo'
+import { buildDemoExport, buildDemoReceipts, buildDemoTransactions, DEMO_PREFIX } from '../import/demo'
+import { saveTransaction } from '../finance/store'
+import { Link } from 'react-router-dom'
 import { deleteReceipt, saveReceipt } from '../receipts/store'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
@@ -19,7 +21,8 @@ export function SettingsView() {
   const lastBackup = useLiveQuery(() => db.meta.get('lastBackupAt'))
   const demoCount = useLiveQuery(async () =>
     (await db.orders.where('orderId').startsWith(DEMO_PREFIX).count()) +
-    (await db.receipts.filter((r) => !!r.demo).count()))
+    (await db.receipts.filter((r) => !!r.demo).count()) +
+    (await db.transactions.filter((t) => !!t.demo).count()))
 
   async function loadDemo() {
     const { orders } = parseAmazonExport(JSON.stringify(buildDemoExport()))
@@ -28,7 +31,11 @@ export function SettingsView() {
     if (!(await db.receipts.filter((r) => !!r.demo).count())) {
       for (const r of receipts) await saveReceipt(db, r)
     }
-    setMessage({ kind: 'ok', text: `${orders.length} Amazon-Bestellungen und ${receipts.length} Kassenbons geladen.` })
+    const transactions = buildDemoTransactions()
+    if (!(await db.transactions.filter((t) => !!t.demo).count())) {
+      for (const t of transactions) await saveTransaction(db, t)
+    }
+    setMessage({ kind: 'ok', text: `${orders.length} Amazon-Bestellungen, ${receipts.length} Kassenbons und ${transactions.length} Buchungen geladen.` })
   }
 
   async function removeDemo() {
@@ -37,6 +44,7 @@ export function SettingsView() {
       await db.orderItems.where('orderId').startsWith(DEMO_PREFIX).delete()
     })
     for (const r of await db.receipts.filter((r) => !!r.demo).toArray()) await deleteReceipt(db, r.id!)
+    await db.transactions.filter((t) => !!t.demo).delete()
     setMessage({ kind: 'ok', text: 'Beispieldaten entfernt.' })
   }
 
@@ -107,6 +115,30 @@ export function SettingsView() {
       </section>
 
       <section className="card">
+        <h2>Importe</h2>
+        <ul className="rows">
+          <li>
+            <Link to="/import" className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="package" /></span>
+              <div className="row-main"><span className="row-title">Amazon-Bestellungen</span><span className="row-sub muted">Datei aus dem Amazon-Skript</span></div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
+          </li>
+          <li>
+            <Link to="/bon/neu" className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="receipt" /></span>
+              <div className="row-main"><span className="row-title">Kassenbon</span><span className="row-sub muted">Bild oder PDF-eBon</span></div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
+          </li>
+          <li>
+            <span className="avatar" aria-hidden="true"><Icon name="wallet" /></span>
+            <div className="row-main"><span className="row-title">ING, Amex, PayPal</span><span className="row-sub muted">kommt in den nächsten Schritten</span></div>
+          </li>
+        </ul>
+      </section>
+
+      <section className="card">
         <h2>Backup</h2>
         <p className="muted">
           Deine Daten liegen nur auf diesem Gerät. Lade regelmäßig ein Backup herunter, z. B. nach
@@ -149,7 +181,7 @@ export function SettingsView() {
       <section className="card">
         <h2>Beispieldaten</h2>
         <p className="muted">
-          Erfundene Amazon-Bestellungen und Kassenbons zum Ausprobieren. Sie lassen sich jederzeit wieder entfernen,
+          Erfundene Amazon-Bestellungen, Kassenbons und Buchungen zum Ausprobieren. Sie lassen sich jederzeit wieder entfernen,
           ohne echte Daten anzufassen.
         </p>
         <div className="button-row">
