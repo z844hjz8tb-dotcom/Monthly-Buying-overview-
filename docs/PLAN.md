@@ -20,11 +20,76 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-4. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
+4. **Phase 3 Haushaltsbuch** (ING, Amex, PayPal, Fixkosten) – Entwurf siehe unten, wartet auf Freigabe und Beispieldateien.
+5. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
 - Die Repo ist öffentlich. Testdateien enthalten keine Adressen/Zahlungsdaten – bei neuen Bons genauso bereinigen. In der Git-Historie (PR #5) steht noch eine Müller-Filialadresse; Entfernen wurde angeboten, nicht entschieden.
 - Arbeitsweise: Feature-Branch → PR → Squash-Merge nach `main` (vom Nutzer so gewünscht), danach Deploy-Lauf prüfen.
+
+## Phase 3: Haushaltsbuch (Entwurf 05.11.2026, wartet auf Freigabe)
+
+Ziel: Alle Ausgaben an einem Ort – Girokonto (ING), Kreditkarte (American Express), PayPal, Bargeld, feste Kosten und Kreditraten – ergänzt um die Details aus Amazon und Kassenbons. Weiterhin ohne Bank-Zugangsdaten: Import per Export-Datei, einmal im Monat.
+
+### Bausteine der App
+| Baustein | Inhalt |
+|---|---|
+| **Übersicht** (neuer Start) | Monat gesamt: Ausgaben nach Kategorie, Vergleich zum Vormonat, feste Kosten vs. variable Ausgaben |
+| **Konten** | ING Giro, Amex, PayPal, Bargeld – Buchungsliste je Konto, Suche, Kategorie ändern |
+| **Amazon** | wie bisher (Details zu Amazon-Buchungen) |
+| **Bons** | wie bisher (Details zu Supermarkt-Buchungen) |
+| **Fixkosten & Kredite** | Monatliche Raten, Abos, Miete; aus dem Girokonto erkannt oder von Hand angelegt |
+| **Import & Daten** | alle Importe an einer Stelle, Backup, Design |
+
+### Grundregel gegen Doppelzählung
+Geld zählt **einmal, dort wo es das Konto verlässt**. Alles andere wird damit verknüpft:
+- **Umbuchungen zählen nicht:** Amex-Abrechnung vom Girokonto abgebucht, PayPal-Aufladung/Lastschrift vom Girokonto → das sind nur Verschiebungen zwischen eigenen Konten.
+- **PayPal ↔ Konto/Karte:** Die PayPal-Zahlung (mit Händlername) ist die eigentliche Ausgabe; die zugehörige Abbuchung auf ING/Amex wird als „über PayPal“ verknüpft.
+- **Amazon & Bons sind Details:** Eine Amex-Buchung „AMAZON…“ wird mit der Amazon-Bestellung verknüpft, „LIDL…“ mit dem Lidl-Bon (Betrag + Datum ± 3 Tage). Bons ohne passende Buchung (bar bezahlt) zählen auf dem Bargeld-Konto.
+- Unsichere Fälle zeigt die App zur Bestätigung an, statt zu raten.
+
+### Kategorien
+Feste Liste zum Start (Lebensmittel, Drogerie, Online-Shopping, Wohnen, Kredite, Versicherungen, Abos, Mobilität, Freizeit, Sonstiges), änderbar. Zuordnung über Regeln nach Empfänger/Verwendungszweck („NETFLIX“ → Abos); jede Korrektur kann zur Regel werden.
+
+### Datenmodell (neu, Dexie-Version 3)
+```
+Account      { id, name, kind: "giro"|"credit"|"paypal"|"cash" }
+Transaction  { id, accountId, date, amountCents (negativ = Ausgabe), counterparty, purpose,
+               categoryId?, kind: "expense"|"income"|"transfer", importKey (Duplikate),
+               linkedOrderId?, linkedReceiptId?, viaTransactionId? }
+Category     { id, name, icon, color }
+CategoryRule { id, pattern, field: "counterparty"|"purpose", categoryId }
+Recurring    { id, name, amountCents, dayOfMonth, start, end?, categoryId, accountId, matchPattern? }
+```
+Duplikate beim erneuten Import: PayPal hat Transaktionscodes; ING und Amex über einen Schlüssel aus Datum + Betrag + Text (+ laufende Nummer bei gleichen Zeilen).
+
+### Importe (Format wird an echten Beispieldateien geprüft)
+| Quelle | Export | Erwartung (noch zu bestätigen) |
+|---|---|---|
+| ING Girokonto | Online-Banking → Umsätze → Export CSV | Semikolon-getrennt, Kopfzeilen mit Kontodaten, dann Buchung, Valuta, Auftraggeber/Empfänger, Buchungstext, Verwendungszweck, Saldo, Betrag |
+| American Express | Online-Konto → Umsätze → Herunterladen (CSV) | Datum, Beschreibung, Betrag (positiv = Belastung), ggf. Kategorie/Händlerdetails |
+| PayPal | Aktivitäten → Berichte → Aktivitätsdownload (CSV) | Datum, Name, Typ, Status, Brutto, Gebühr, Netto, Transaktionscode, zugehöriger Code |
+
+Testdateien kommen nur bereinigt ins Repo (keine IBAN, Namen, Kartennummern) – Repo ist öffentlich.
+
+### Fixkosten & Kredite
+Nur die monatliche Rate (kein Restschuld-/Zinsplan). Die App schlägt wiederkehrende Abbuchungen aus dem Girokonto als Fixkosten vor („jeden Monat ~250 € an XY-Bank“); Raten, die (noch) nicht in den Importen stehen, lassen sich von Hand anlegen. Vorschau: feste Kosten des kommenden Monats.
+
+### Sicherheit
+Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (WebCrypto, AES-GCM). Daten bleiben weiterhin nur auf dem Gerät.
+
+### Meilensteine
+| # | Inhalt |
+|---|---|
+| H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine |
+| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln |
+| H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung |
+| H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex |
+| H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen |
+| H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau |
+| H7 | Verschlüsseltes Backup |
+
+Benötigt vom Nutzer: je eine Beispiel-Exportdatei von ING, Amex und PayPal (gern geschwärzt).
 
 ## Entscheidungen
 
