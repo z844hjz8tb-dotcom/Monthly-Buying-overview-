@@ -132,6 +132,18 @@
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+
+  /* Kategoriefarben: gleich in allen Farbwelten, mittlere Töne mit weißem Icon (hell und dunkel lesbar) */
+  --cat-1: #16a34a;
+  --cat-2: #db2777;
+  --cat-3: #ea580c;
+  --cat-4: #2563eb;
+  --cat-5: #7c3aed;
+  --cat-6: #0891b2;
+  --cat-7: #c026d3;
+  --cat-8: #ca8a04;
+  --cat-9: #e11d48;
+  --cat-10: #64748b;
 }
 
 * { box-sizing: border-box; }
@@ -651,3 +663,53 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
   background: linear-gradient(to bottom, transparent, var(--bg) 45%);
   pointer-events: none;
 }
+
+/* ============================================================
+   Haushaltsbuch: Kategorien, Konten, Buchungen
+   ============================================================ */
+.avatar.cat { color: #fff; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 6px; }
+.cat-option {
+  flex-direction: column;
+  gap: 6px;
+  min-height: 76px;
+  padding: 8px 4px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 2px transparent;
+}
+.cat-option .cat-dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: #fff; }
+.cat-option.active { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft); }
+.amount-field { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 2px; }
+.amount-field input {
+  width: 100%;
+  min-height: 64px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.amount-field span { font-size: 1.6rem; font-weight: 800; color: var(--muted); }
+.segmented.full-width { display: flex; width: 100%; }
+.segmented.full-width button { flex: 1; min-height: 38px; }
+.amount-out { color: var(--text); }
+.amount-in { color: var(--ok); }
+.amount-transfer { color: var(--muted); }
+.source-pill { display: inline-flex; align-items: center; gap: 4px; }
+.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  text-decoration: none;
+}
+.tile .tile-value { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
