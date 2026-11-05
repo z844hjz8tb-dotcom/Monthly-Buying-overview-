@@ -14,7 +14,9 @@ Persönliche PWA (React + TypeScript + Vite, Dexie/IndexedDB) für Amazon-Ausgab
 - `src/receipts/parse.ts` – Bon-Leser für alle Läden; jede Anpassung mit Testfall in `tests/parse.test.ts`
 - `src/receipts/ocr.ts`, `src/receipts/pdf.ts` – lokale Bild- bzw. PDF-Texterkennung
 - `src/receipts/store.ts`, `src/normalize/match.ts` – Zuordnung Bontext → Produkt
-- `src/index.css` – alle Farben als Variablen je Farbwelt (`data-look` auf `<html>`: frisch, sonne, abend); `src/lib/look.ts` wählt sie, `src/components/Icon.tsx` enthält die Icons
+- `src/finance/` – Haushaltsbuch: Standardkonten/-kategorien (`defaults.ts`, werden beim Start ergänzt), Buchungen speichern (`store.ts`), Hooks (`useFinance.ts`)
+- `src/stats/overview.ts` – Monatsübersicht über alle Quellen; **Grundregel: Geld zählt einmal** (Umbuchungen, `viaTransactionId`, verknüpfte Bestellungen/Bons nicht doppelt) – Änderungen immer mit Test in `tests/overview.test.ts`
+- `src/index.css` – alle Farben als Variablen je Farbwelt (`data-look` auf `<html>`: frisch, sonne, abend; Kategoriefarben `--cat-1…10` gemeinsam für alle); `src/lib/look.ts` wählt sie, `src/components/Icon.tsx` enthält die Icons
 - `tests/fixtures/` – echte Bon-Texte, **ohne Adressen, Karten- und Zahlungsdaten** (Repo ist öffentlich)
 
 ## Arbeitsweise
