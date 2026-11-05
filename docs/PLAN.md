@@ -20,7 +20,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 1. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 2. **M2 Amazon-Konsolen-Skript** – wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 3. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-4. Später: Abgleich der Top-Artikel mit Prospektangeboten; optional KI für Fotos von Papierbons.
+4. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
 - Die Repo ist öffentlich. Testdateien enthalten keine Adressen/Zahlungsdaten – bei neuen Bons genauso bereinigen. In der Git-Historie (PR #5) steht noch eine Müller-Filialadresse; Entfernen wurde angeboten, nicht entschieden.
@@ -135,6 +135,24 @@ Live Text (iPhone) wurde verworfen: Es erkannte nicht alle Zeilen.
 **Texterkennung** (`src/receipts/ocr.ts`): tesseract.js mit deutschen Sprachdaten, von der App selbst ausgeliefert (`scripts/copy-ocr.mjs` → `public/ocr`, ca. 5 MB, wird erst beim ersten Gebrauch geladen und dann offline gespeichert). Vorher wird das Bild ganzzahlig auf ca. 1500 px Breite vergrößert und in Schwarz-Weiß umgewandelt – ohne das fehlen die Artikelzeilen. Typische Fehler (0↔9, „1l“ statt „1“) korrigiert der Leser über die Preis-Spalte.
 
 Der Leser (`src/receipts/parse.ts`) erkennt Müller-Tabellenzeilen (Menge, Preis, Nachlass, Summe), Artikel- und Mengenzeilen, Gewichtszeilen, Rabatte (werden mit dem Artikel davor verrechnet), Summe, Laden und Datum. Live-Text-Spalten (erst alle Namen, dann alle Preise) werden der Reihe nach gepaart.
+
+## Prospektangebote: Machbarkeit (Stand 04.11.2026, noch nicht selbst getestet)
+
+Ziel: wöchentlich Angebote von Lidl, Kaufland, Penny, Müller, Rewe, Aldi Süd/Nord, Edeka holen und mit den eigenen Top-Artikeln abgleichen.
+
+**Geplanter Aufbau:** Wöchentlicher GitHub-Actions-Lauf holt die Angebote und legt `angebote.json` neben die App (gleiche Herkunft, kein CORS-Problem). Der Abgleich mit den eigenen Produkten passiert nur auf dem Gerät (`src/normalize/match.ts`); die Einkaufsliste kommt nie ins öffentliche Repo. Start mit bundesweiten Angeboten (ohne Postleitzahl).
+
+**Recherche (aus zweiter Hand):**
+| Laden | Einschätzung |
+|---|---|
+| Rewe | gut: „nationale Angebote“ als HTML, laut robots.txt erlaubt; marktbezogene Angebote nur über App-API mit mTLS – nicht verwenden |
+| Lidl, Penny, Aldi Süd/Nord | wahrscheinlich machbar (kommerzielle Scraper decken sie ab) |
+| Edeka | machbar, aber Angebote je Markt (Markt-ID nötig) |
+| Kaufland | schwierig: Bot-Schutz (Cloudflare) – nicht umgehen |
+| Müller | unklar: Prospekt alle 2 Wochen, vor allem als blätterbarer Prospekt bei Portalen |
+| marktguru | inoffizielle Bibliothek (npm `marktguru`), Suche nach PLZ und Laden; bequem, aber ohne Erlaubnis |
+
+**Offen:** Direkter Test war nicht möglich – die Cloud-Umgebung sperrt die Händler-Domains, ein Testlauf über GitHub Actions wurde von der Sicherheitsprüfung gestoppt. Nutzer muss entweder die Domains in den Netzwerkeinstellungen der Umgebung freigeben oder den Actions-Testlauf ausdrücklich erlauben.
 
 ## Handy-Besonderheit: Datensicherheit
 
