@@ -6,6 +6,9 @@ import { formatCents, parseEuroToCents } from '../lib/money'
 import { deleteTransaction, saveTransaction, saveTransfer, signedAmount, transferKind } from '../finance/store'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 import { reclassifyImported } from '../import/bank'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { Link } from 'react-router-dom'
+import { formatDay } from '../stats/spending'
 
 type Mode = 'expense' | 'income' | 'transfer'
 const MODES: { id: Mode; label: string }[] = [
@@ -43,6 +46,13 @@ export function TransactionEditor() {
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [learn, setLearn] = useState(true)
+  const linked = useLiveQuery(async () => {
+    if (routeId === undefined) return null
+    const t = await db.transactions.get(routeId)
+    const receipt = t?.linkedReceiptId !== undefined ? await db.receipts.get(t.linkedReceiptId) : undefined
+    const order = t?.linkedOrderId ? await db.orders.get(t.linkedOrderId) : undefined
+    return { receipt, order }
+  }, [routeId])
 
   useEffect(() => {
     if (routeId === undefined) return
@@ -234,6 +244,32 @@ export function TransactionEditor() {
               </button>
             ))}
           </div>
+        </section>
+      )}
+
+      {(linked?.receipt || linked?.order) && (
+        <section className="card">
+          <h2>Details</h2>
+          {linked.receipt && (
+            <Link to={`/bon/${linked.receipt.id}`} className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="receipt" /></span>
+              <div className="row-main">
+                <span className="row-title">Kassenbon {linked.receipt.store}</span>
+                <span className="row-sub muted">{formatDay(linked.receipt.date)} · {formatCents(linked.receipt.totalCents)} · mit Artikeln</span>
+              </div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
+          )}
+          {linked.order && (
+            <Link to={`/monat/${linked.order.date.slice(0, 7)}`} className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="package" /></span>
+              <div className="row-main">
+                <span className="row-title">Amazon-Bestellung {linked.order.orderId}</span>
+                <span className="row-sub muted">{formatDay(linked.order.date)} · {formatCents(linked.order.totalCents)}</span>
+              </div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
+          )}
         </section>
       )}
 

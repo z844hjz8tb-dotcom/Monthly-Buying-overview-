@@ -17,6 +17,7 @@ Persönliche PWA (React + TypeScript + Vite, Dexie/IndexedDB) für Amazon-Ausgab
 - `src/receipts/store.ts`, `src/normalize/match.ts` – Zuordnung Bontext → Produkt
 - `src/finance/` – Haushaltsbuch: Standardkonten/-kategorien (`defaults.ts`, werden beim Start ergänzt), Buchungen speichern (`store.ts`), Hooks (`useFinance.ts`)
 - `src/import/ing.ts`, `src/import/amex.ts`, `src/import/bank.ts` (einheitliches `BankExport`), `src/finance/classify.ts` – Bank-Import (ING-CSV, Amex-CSV), Einordnung jeder Buchung (eingebaute Regeln + gelernte Regeln + „Erkennen an“ der Konten), Neu-Einordnen; jede Regeländerung mit Test in `tests/ing.test.ts`
+- `src/finance/links.ts` – Bons ↔ Kartenzahlung verknüpfen (automatisch/Vorschlag/bar bezahlt); Tests in `tests/links.test.ts`
 - `src/stats/overview.ts` – Monatsübersicht über alle Quellen; **Grundregel: Geld zählt einmal** (Umbuchungen, `viaTransactionId`, verknüpfte Bestellungen/Bons nicht doppelt) – Änderungen immer mit Test in `tests/overview.test.ts`
 - `src/index.css` – alle Farben als Variablen je Farbwelt (`data-look` auf `<html>`: frisch, sonne, abend; Kategoriefarben `--cat-1…10` gemeinsam für alle); `src/lib/look.ts` wählt sie, `src/components/Icon.tsx` enthält die Icons
 - `src/help/topics.tsx` – Anleitung in der App (`/hilfe/:thema`); bei geänderten Abläufen mitpflegen

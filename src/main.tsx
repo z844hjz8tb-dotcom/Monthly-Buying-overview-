@@ -7,6 +7,7 @@ import { db } from './db/schema'
 import { ensureDefaults } from './finance/defaults'
 import { RULES_VERSION } from './finance/classify'
 import { reclassifyImported } from './import/bank'
+import { findReceiptLinks } from './finance/links'
 
 applyLook()
 ensureDefaults(db)
@@ -17,6 +18,8 @@ ensureDefaults(db)
       await reclassifyImported(db)
       await db.meta.put({ key: 'rulesVersion', value: String(RULES_VERSION) })
     }
+    // Bons mit Kartenzahlungen verknüpfen (z. B. für Daten von vor diesem Update)
+    await findReceiptLinks(db)
   })
   .catch((e) => console.error('Standarddaten konnten nicht angelegt werden', e))
 

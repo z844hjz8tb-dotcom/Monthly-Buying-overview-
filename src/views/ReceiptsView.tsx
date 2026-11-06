@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
+import { ReceiptLinkSuggestions } from '../components/ReceiptLinks'
 import { storeColor } from '../lib/look'
 import { formatCents } from '../lib/money'
 import { loadAliasMap, openGroups, topProducts, type TopProduct } from '../receipts/store'
@@ -34,7 +35,10 @@ export function ReceiptsView() {
     const monthLines = allLines.filter((l) => ids.has(l.receiptId))
     const lineCount = new Map<number, number>()
     for (const l of monthLines) lineCount.set(l.receiptId, (lineCount.get(l.receiptId) ?? 0) + 1)
+    const paidWith = new Map<number, string>()
+    for (const t of await db.transactions.where('linkedReceiptId').anyOf([...ids]).toArray()) paidWith.set(t.linkedReceiptId!, t.accountId)
     return {
+      paidWith,
       receipts: monthReceipts.sort((a, b) => b.date.localeCompare(a.date) || b.id! - a.id!),
       lineCount,
       top: topProducts(monthReceipts, monthLines, aliases, products),
@@ -69,6 +73,8 @@ export function ReceiptsView() {
           <Link className="button on-hero" to="/bon/neu"><Icon name="plus" size={18} />Bon erfassen</Link>
         </div>
       </section>
+
+      <ReceiptLinkSuggestions />
 
       {data.openCount > 0 && (
         <Link to="/zuordnen" className="card reminder">
@@ -117,7 +123,11 @@ export function ReceiptsView() {
                 <Link to={`/bon/${r.id}`} className="row-link">
                   <span className="avatar store" style={{ background: storeColor(r.store) }} aria-hidden="true">{r.store.slice(0, 1).toUpperCase()}</span>
                   <div className="row-main">
-                    <span className="row-title">{r.store}</span>
+                    <span className="row-title">
+                      {r.store}
+                      {data.paidWith.has(r.id!) && <span className="badge open" title="mit Kontobuchung verknüpft"><Icon name="link" size={12} /> Konto</span>}
+                      {r.paidCash && <span className="badge">bar</span>}
+                    </span>
                     <span className="row-sub muted">{formatDay(r.date)} · {data.lineCount.get(r.id!) ?? 0} Artikel</span>
                   </div>
                   <span className="row-amount">{formatCents(r.totalCents)}</span>

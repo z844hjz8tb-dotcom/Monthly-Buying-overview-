@@ -7,12 +7,13 @@ import { formatDay } from '../stats/spending'
 import { decodeBankFile, isIngExport, parseIngCsv } from '../import/ing'
 import { isAmexExport, parseAmexCsv } from '../import/amex'
 import { applyBankImport, ingToBankExport, loadOwnNames, ownNamesFromCustomer, planBankImport, saveOwnNames, type BankExport, type ImportResult, type PlannedRow } from '../import/bank'
+import { findReceiptLinks } from '../finance/links'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 
 type State =
   | { step: 'idle' }
   | { step: 'preview'; fileName: string; ex: BankExport; accountId: string; plan: PlannedRow[] }
-  | { step: 'done'; result: ImportResult; accountId: string; openTransfers: number; uncategorized: number }
+  | { step: 'done'; result: ImportResult; accountId: string; openTransfers: number; uncategorized: number; receiptsLinked: number; receiptSuggestions: number }
   | { step: 'error'; message: string }
 
 const KIND_LABEL = { expense: 'Ausgaben', income: 'Einnahmen', transfer: 'Umbuchungen', saving: 'Sparen' } as const
@@ -69,10 +70,13 @@ export function BankImportView() {
     setBusy(true)
     try {
       const result = await applyBankImport(db, state.ex, state.accountId, state.plan)
+      const links = await findReceiptLinks(db)
       const fresh = state.plan.filter((p) => !p.duplicate)
       setState({
         step: 'done',
         result,
+        receiptsLinked: links.linked,
+        receiptSuggestions: links.suggestions.length,
         accountId: state.accountId,
         openTransfers: fresh.filter((p) => (p.tx.kind === 'transfer' || p.tx.kind === 'saving') && !p.tx.transferAccountId).length,
         uncategorized: fresh.filter((p) => p.tx.kind === 'expense' && !p.tx.categoryId).length,
@@ -203,6 +207,12 @@ export function BankImportView() {
       {state.step === 'done' && (
         <section className="card">
           <p className="toast ok" role="status">{state.result.added} Buchungen importiert{state.result.skipped ? `, ${state.result.skipped} waren schon da` : ''}.</p>
+          {(state.receiptsLinked > 0 || state.receiptSuggestions > 0) && (
+            <p className="muted small" style={{ marginTop: 10 }}>
+              {state.receiptsLinked > 0 && (state.receiptsLinked === 1 ? '1 Kassenbon mit seiner Kartenzahlung verknüpft. ' : `${state.receiptsLinked} Kassenbons mit ihrer Kartenzahlung verknüpft. `)}
+              {state.receiptSuggestions > 0 && <>{state.receiptSuggestions} mögliche Zuordnungen warten im <Link to="/bons" className="text-link">Bons-Tab</Link> auf deine Bestätigung.</>}
+            </p>
+          )}
           {(state.openTransfers > 0 || state.uncategorized > 0) && (
             <p className="muted small" style={{ marginTop: 10 }}>
               {state.openTransfers > 0 && `${state.openTransfers} Umbuchungen ohne Zielkonto. `}
