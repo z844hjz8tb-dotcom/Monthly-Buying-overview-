@@ -36,11 +36,11 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 3
+export const RULES_VERSION = 4
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
-  ['*tierarzt', 'haustier'], ['*tierfachmarkt', 'haustier'], ['*haustier', 'haustier'], ['fressnapf', 'haustier'], ['zooplus', 'haustier'],
+  ['*tierarzt', 'haustier'], ['*tierfachmarkt', 'haustier'], ['*haustier', 'haustier'], ['fressnapf', 'haustier'], ['koelle-zoo', 'haustier'], ['zoo ', 'haustier'], ['zooplus', 'haustier'],
   ['futterhaus', 'haustier'], ['tiernahrung', 'haustier'],
   ['*apotheke', 'gesundheit'], ['*arzt', 'gesundheit'], ['*aerzte', 'gesundheit'], ['*praxis', 'gesundheit'], ['klinik', 'gesundheit'],
   ['krankenhaus', 'gesundheit'], ['physio', 'gesundheit'], ['optik', 'gesundheit'], ['fielmann', 'gesundheit'], ['labor ', 'gesundheit'],
@@ -51,23 +51,23 @@ export const BUILTIN_RULES: [string, string][] = [
   // Abos vor Online-Shopping, damit "Amazon Prime Video" nicht bei Online landet
   ['prime video', 'abos'], ['amazon kids', 'abos'], ['amazon digital', 'abos'], ['audible', 'abos'], ['netflix', 'abos'],
   ['spotify', 'abos'], ['disney', 'abos'], ['apple.com bill', 'abos'], ['google payment', 'abos'], ['congstar', 'abos'],
-  ['telekom', 'abos'], ['vodafone', 'abos'], ['o2 ', 'abos'], ['dazn', 'abos'], ['youtube', 'abos'], ['apple services', 'abos'], ['openai', 'abos'], ['subscription', 'abos'],
+  ['telekom', 'abos'], ['vodafone', 'abos'], ['o2 ', 'abos'], ['dazn', 'abos'], ['youtube', 'abos'], ['anthropic', 'abos'], ['claude sub', 'abos'], ['apple.com/bill', 'abos'], ['apple services', 'abos'], ['openai', 'abos'], ['subscription', 'abos'],
   ['lidl', 'lebensmittel'], ['aldi', 'lebensmittel'], ['rewe', 'lebensmittel'], ['edeka', 'lebensmittel'], ['kaufland', 'lebensmittel'],
   ['penny', 'lebensmittel'], ['netto', 'lebensmittel'], ['norma', 'lebensmittel'], ['markt ohg', 'lebensmittel'], ['*baeckerei', 'lebensmittel'],
   ['*backerei', 'lebensmittel'], ['backhaus', 'lebensmittel'], ['*metzgerei', 'lebensmittel'], ['*baeck', 'lebensmittel'], ['backstube', 'lebensmittel'], ['vinzenzmurr', 'lebensmittel'], ['*getranke', 'lebensmittel'], ['*getraenke', 'lebensmittel'],
   ['muller handels', 'drogerie'], ['muller vertrieb', 'drogerie'], ['mueller ', 'drogerie'], ['mueller handels', 'drogerie'], ['*drogerie', 'drogerie'], ['dm-drogerie', 'drogerie'], ['rossmann', 'drogerie'],
   ['amazon', 'online'], ['amzn', 'online'], ['ebay', 'online'], ['zalando', 'online'], ['otto gmbh', 'online'], ['temu', 'online'], ['bergfreunde', 'online'],
-  ['octopus energy', 'wohnen'], ['stadtwerke', 'wohnen'], ['strom', 'wohnen'], ['rundfunk', 'wohnen'], ['miete', 'wohnen'], ['hausverwaltung', 'wohnen'],
+  ['octopus', 'wohnen'], ['*baumarkt', 'wohnen'], ['stadtwerke', 'wohnen'], ['strom', 'wohnen'], ['rundfunk', 'wohnen'], ['miete', 'wohnen'], ['hausverwaltung', 'wohnen'],
   ['baumarkt', 'wohnen'], ['obi ', 'wohnen'], ['hornbach', 'wohnen'], ['bauhaus', 'wohnen'], ['ikea', 'wohnen'], ['garten', 'wohnen'],
   ['*versicherung', 'versicherungen'], ['allianz', 'versicherungen'], ['huk', 'versicherungen'], ['ergo ', 'versicherungen'], ['axa', 'versicherungen'],
   ['devk', 'versicherungen'], ['hdi', 'versicherungen'], ['debeka', 'versicherungen'],
   ['*tankstelle', 'mobilitaet'], ['tamoil', 'mobilitaet'], ['aral', 'mobilitaet'], ['shell', 'mobilitaet'], ['esso', 'mobilitaet'], ['agip', 'mobilitaet'],
   ['jet ', 'mobilitaet'], ['easypark', 'mobilitaet'], ['parken', 'mobilitaet'], ['parkster', 'mobilitaet'], ['mobility hub', 'mobilitaet'],
-  ['parkservice', 'mobilitaet'], ['taxi', 'mobilitaet'], ['db vertrieb', 'mobilitaet'], ['deutsche bahn', 'mobilitaet'], ['flixbus', 'mobilitaet'],
+  ['parkservice', 'mobilitaet'], ['taxi', 'mobilitaet'], ['db vertrieb', 'mobilitaet'], ['dbvertrieb', 'mobilitaet'], ['tesla', 'mobilitaet'], ['deutsche bahn', 'mobilitaet'], ['flixbus', 'mobilitaet'],
   ['*restaurant', 'freizeit'], ['*pizzeria', 'freizeit'], ['mcdonalds', 'freizeit'], ['burger', 'freizeit'], ['cafe', 'freizeit'], ['kino', 'freizeit'],
   ['eventim', 'freizeit'], ['lotto', 'freizeit'], ['booking.com', 'freizeit'], ['center parc', 'freizeit'], ['tourismus', 'freizeit'], ['toys', 'freizeit'],
   ['playstation', 'freizeit'], ['steam', 'freizeit'], ['freizeitbad', 'freizeit'], ['bergbahn', 'freizeit'],
-  ['airbnb', 'freizeit'], ['decathlon', 'freizeit'], ['*kantine', 'lebensmittel'], ['eurest', 'lebensmittel'],
+  ['airbnb', 'freizeit'], ['*hotel', 'freizeit'], ['premier inn', 'freizeit'], ['winstub', 'freizeit'], ['decathlon', 'freizeit'], ['*kantine', 'lebensmittel'], ['eurest', 'lebensmittel'],
 ]
 
 const norm = (s: string) =>
@@ -76,6 +76,9 @@ const norm = (s: string) =>
 /** Lesbarer Empfängername: "VISA LIDL SAGT DANKE" → "LIDL SAGT DANKE", PayPal → "PayPal: Netflix.com" */
 export function displayCounterparty(row: BankRow): string {
   const cp = row.counterparty.replace(/\s+/g, ' ').trim()
+  // Kreditkarte: "PAYPAL *FRISEURMUSTER" → "PayPal: FRISEURMUSTER"
+  const cardPaypal = cp.match(/^PAYPAL \*\s*(\S+)/i)
+  if (cardPaypal) return `PayPal: ${cardPaypal[1]}`
   if (/paypal/i.test(cp)) {
     // "…/. Netflix. com, Ihr Einkauf bei Netflix.com": Händler steht zweimal da; die ING fügt beim Export
     // an Zeilenumbrüchen Leerzeichen ein ("Servi ces"). Die Fassung mit den wenigsten Leerzeichen ist die heile.
@@ -159,6 +162,12 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
     counterparty,
   })
 
+  // 0. Kreditkarte: Ausgleich vom Girokonto ist eine Umbuchung
+  const isCard = row.bookingText === 'Kreditkarte'
+  if (isCard && /zahlung.{0,15}erhalten|payment received|lastschrift erhalten/.test(text)) {
+    return move(ctx.accounts.find((a) => a.id === 'ing' && !a.hidden) ?? ctx.accounts.find((a) => a.kind === 'giro' && !a.demo && !a.hidden))
+  }
+
   // 1. Kredite
   if (/darlehensauszahlung|kreditauszahlung/.test(text)) return { kind: 'transfer', counterparty: counterparty === row.counterparty ? 'Darlehensauszahlung' : counterparty }
   // Vorausdarlehen: Zinsen sind Kosten (Kredite), die Ansparung in den Bausparvertrag baut Vermögen auf (Sparen)
@@ -197,7 +206,8 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   // 7. Kategorie
   const categoryId = matchCategory(row, ctx.rules)
   const linkedOrderId = amazonOrderId(row)
-  if (row.amountCents > 0 && !categoryId) return { kind: 'income', counterparty }
+  // Gutschrift auf der Kreditkarte ist (fast) immer eine Erstattung, keine Einnahme
+  if (row.amountCents > 0 && !categoryId && !isCard) return { kind: 'income', counterparty }
   // Gutschrift eines Händlers = Erstattung: Ausgabe mit positivem Betrag, mindert die Kategorie
   return { kind: 'expense', categoryId, counterparty, ...(linkedOrderId ? { linkedOrderId } : {}) }
 }

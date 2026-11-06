@@ -4,13 +4,14 @@ import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
-import { decodeBankFile, isIngExport, parseIngCsv, type IngExport } from '../import/ing'
-import { applyIngImport, loadOwnNames, ownNamesFromCustomer, planIngImport, saveOwnNames, type ImportResult, type PlannedRow } from '../import/bank'
+import { decodeBankFile, isIngExport, parseIngCsv } from '../import/ing'
+import { isAmexExport, parseAmexCsv } from '../import/amex'
+import { applyBankImport, ingToBankExport, loadOwnNames, ownNamesFromCustomer, planBankImport, saveOwnNames, type BankExport, type ImportResult, type PlannedRow } from '../import/bank'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 
 type State =
   | { step: 'idle' }
-  | { step: 'preview'; fileName: string; ex: IngExport; accountId: string; plan: PlannedRow[] }
+  | { step: 'preview'; fileName: string; ex: BankExport; accountId: string; plan: PlannedRow[] }
   | { step: 'done'; result: ImportResult; accountId: string; openTransfers: number; uncategorized: number }
   | { step: 'error'; message: string }
 
@@ -31,8 +32,10 @@ export function BankImportView() {
   async function readFile(file: File) {
     try {
       const text = decodeBankFile(await file.arrayBuffer())
-      if (!isIngExport(text)) throw new Error('Diese Datei erkenne ich nicht. Bisher geht der ING-Export: Umsätze → Export → CSV.')
-      const ex = parseIngCsv(text)
+      let ex: BankExport
+      if (isIngExport(text)) ex = ingToBankExport(parseIngCsv(text))
+      else if (isAmexExport(text)) ex = parseAmexCsv(text)
+      else throw new Error('Diese Datei erkenne ich nicht. Möglich sind der ING-Export (Umsätze → Export → CSV) und der American-Express-Export (Umsätze → Herunterladen → CSV).')
       // Eigene Namen beim ersten Import aus dem Dateikopf übernehmen
       const known = await loadOwnNames(db)
       if (!known.length && ex.customer) {
@@ -42,8 +45,8 @@ export function BankImportView() {
       }
       const accounts = await db.accounts.toArray()
       const byIban = ex.iban ? accounts.find((a) => a.iban === ex.iban) : undefined
-      const accountId = byIban?.id ?? 'ing'
-      setState({ step: 'preview', fileName: file.name, ex, accountId, plan: await planIngImport(db, ex, accountId) })
+      const accountId = byIban?.id ?? (accounts.some((a) => a.id === ex.defaultAccountId) ? ex.defaultAccountId : 'ing')
+      setState({ step: 'preview', fileName: file.name, ex, accountId, plan: await planBankImport(db, ex, accountId) })
     } catch (e) {
       setState({ step: 'error', message: e instanceof Error ? e.message : String(e) })
     } finally {
@@ -53,19 +56,19 @@ export function BankImportView() {
 
   async function changeAccount(accountId: string) {
     if (state.step !== 'preview') return
-    setState({ ...state, accountId, plan: await planIngImport(db, state.ex, accountId) })
+    setState({ ...state, accountId, plan: await planBankImport(db, state.ex, accountId) })
   }
 
   async function updateOwnNames() {
     await saveOwnNames(db, ownNames.split(','))
-    if (state.step === 'preview') setState({ ...state, plan: await planIngImport(db, state.ex, state.accountId) })
+    if (state.step === 'preview') setState({ ...state, plan: await planBankImport(db, state.ex, state.accountId) })
   }
 
   async function doImport() {
     if (state.step !== 'preview') return
     setBusy(true)
     try {
-      const result = await applyIngImport(db, state.ex, state.accountId, state.plan)
+      const result = await applyBankImport(db, state.ex, state.accountId, state.plan)
       const fresh = state.plan.filter((p) => !p.duplicate)
       setState({
         step: 'done',
@@ -102,7 +105,9 @@ export function BankImportView() {
       <section className="card">
         <h2>Bank-Umsätze importieren</h2>
         <p className="muted small">
-          ING: im Online-Banking am PC → Konto → <strong>Umsätze</strong> → <strong>Export</strong> → CSV. Die Datei wird nur auf diesem Gerät gelesen.
+          <strong>ING:</strong> Online-Banking am PC → Konto → Umsätze → Export → CSV.<br />
+          <strong>American Express:</strong> Online-Konto am PC → Umsätze → Herunterladen → CSV.<br />
+          Die Datei wird nur auf diesem Gerät gelesen.
           Bereits importierte Buchungen werden erkannt und nicht doppelt angelegt.
         </p>
         {state.step !== 'preview' && (
@@ -119,7 +124,7 @@ export function BankImportView() {
         <>
           <section className="card">
             <h2>Auf welches Konto?</h2>
-            <p className="muted small">{state.ex.accountName ?? 'Konto'}{state.ex.iban ? ` · IBAN …${state.ex.iban.slice(-4)}` : ''} · {state.plan.length} Buchungen in der Datei</p>
+            <p className="muted small">{state.ex.label}{state.ex.accountName ? ` · ${state.ex.accountName}` : ''}{state.ex.iban ? ` · IBAN …${state.ex.iban.slice(-4)}` : ''} · {state.plan.length} Buchungen in der Datei</p>
             <div className="chips">
               {refs.visibleAccounts.filter((a) => a.kind !== 'cash' && a.kind !== 'paypal').map((a) => (
                 <button key={a.id} className={`chip${state.accountId === a.id ? ' active' : ''}`} onClick={() => changeAccount(a.id)}>
