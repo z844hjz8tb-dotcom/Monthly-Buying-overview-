@@ -1,5 +1,5 @@
 /*
- * Ausgaben-Tracker – Amazon-Bestellungen exportieren (Version 1)
+ * Ausgaben-Tracker – Amazon-Bestellungen exportieren (Skript-Version 2)
  *
  * So geht's (am PC, Chrome/Edge/Firefox):
  *   1. Auf amazon.de "Meine Bestellungen" öffnen und oben den Zeitraum wählen (z. B. "2026").
@@ -35,6 +35,8 @@
       chargeSummary: '[data-component="chargeSummary"]',
       itemTitle: '[data-component="itemTitle"]',
       quantity: '[data-component="quantity"]',
+      /** weitere Stellen, an denen Amazon die Menge zeigen kann (z. B. Zahl auf dem Produktbild) */
+      quantityFallback: '[class*="quantity"], [class*="qty"], [class*="Quantity"], [aria-label*="Menge"]',
       unitPrice: '[data-component="unitPrice"]',
       cancelled: '[data-component="cancelled"]',
     },
@@ -87,17 +89,51 @@
       const title = clean(titleEl.textContent)
       if (!title) continue
       const priceEl = box?.querySelector(`${S.unitPrice} .a-offscreen`) || box?.querySelector(S.unitPrice)
-      const qty = parseInt(clean(box?.querySelector(S.quantity)?.textContent).replace(/\D/g, ''), 10)
-      items.push({ title, quantity: qty > 0 ? qty : 1, unitPriceCents: priceEl ? parseEuro(priceEl.textContent) : null })
+      // ganzer Artikelblock inkl. Bildspalte (dort zeigt Amazon die Menge teils als Zahl auf dem Bild)
+      const block = box?.closest('[data-component="purchasedItems"]') || box
+      items.push({ title, quantity: readQuantity(block), unitPriceCents: priceEl ? parseEuro(priceEl.textContent) : null })
     }
+
+    // Zwischensumme = Summe der Artikel (vor Versand/Rabatt). Fehlt Geld, steckt oft eine Menge > 1 dahinter.
+    const subtotal = parseEuro((chargeText.split(/Zwischensumme/i)[1] || '').split('€')[0])
+    if (subtotal !== null) inferQuantities(items, subtotal)
 
     const cancelledText = clean(doc.querySelector(S.cancelled)?.textContent)
     return {
       orderId,
       date,
       totalCents: total ?? items.reduce((s, i) => s + (i.unitPriceCents ?? 0) * i.quantity, 0),
+      subtotalCents: subtotal ?? undefined,
       status: cancelledText ? 'cancelled' : 'ok',
       items,
+    }
+  }
+
+  /** Menge eines Artikels: Mengenfeld, sonst eine Mengen-Markierung (z. B. "2" auf dem Produktbild), sonst 1 */
+  function readQuantity(box) {
+    if (!box) return 1
+    const fromField = parseInt(clean(box.querySelector(CONFIG.selectors.quantity)?.textContent).replace(/\D/g, ''), 10)
+    if (fromField > 0) return fromField
+    for (const el of box.querySelectorAll(CONFIG.selectors.quantityFallback)) {
+      const t = clean(el.textContent)
+      const m = t.match(/^(?:Menge:?\s*)?(\d{1,2})$/i)
+      if (m && Number(m[1]) > 0) return Number(m[1])
+    }
+    return 1
+  }
+
+  /** Ergänzt Mengen, wenn Stückpreis × Menge die fehlende Differenz zur Zwischensumme genau erklärt */
+  function inferQuantities(items, subtotal) {
+    const sum = () => items.reduce((s, i) => s + (i.unitPriceCents ?? 0) * i.quantity, 0)
+    let missing = subtotal - sum()
+    if (missing <= 0) return
+    for (const it of items) {
+      if (!it.unitPriceCents || missing <= 0) continue
+      const extra = missing / it.unitPriceCents
+      if (Number.isInteger(extra) && extra >= 1 && extra <= 20) {
+        it.quantity += extra
+        missing = 0
+      }
     }
   }
 
@@ -217,6 +253,9 @@
           const noPrice = order.items.filter((it) => it.unitPriceCents === null).length
           if (!order.items.length) problems.push(`${o.id}: keine Artikel gefunden`)
           if (noPrice) problems.push(`${o.id}: ${noPrice} Artikel ohne Preis`)
+          const itemSum = order.items.reduce((s, it) => s + (it.unitPriceCents ?? 0) * it.quantity, 0)
+          if (order.subtotalCents !== undefined && itemSum < order.subtotalCents)
+            problems.push(`${o.id}: Artikel ergeben ${(itemSum / 100).toFixed(2)} €, Zwischensumme ist ${(order.subtotalCents / 100).toFixed(2)} € – evtl. Artikel oder Menge nicht gelesen`)
         }
       } catch (e) {
         problems.push(`${o.id}: ${e.message}`)
@@ -232,6 +271,6 @@
     alert(`Fertig: ${orders.length} Bestellungen exportiert${problems.length ? `, ${problems.length} Hinweise (siehe Konsole)` : ''}.\nDie Datei liegt in deinen Downloads.`)
   }
 
-  globalThis.__ausgabenAmazon = { CONFIG, parseEuro, parseGermanDate, parseDetail, orderIdsFromOverview }
+  globalThis.__ausgabenAmazon = { CONFIG, parseEuro, parseGermanDate, parseDetail, orderIdsFromOverview, inferQuantities }
   if (typeof location !== 'undefined' && /(^|\.)amazon\.de$/.test(location.hostname)) main().catch((e) => alert('Fehler: ' + e.message))
 })()

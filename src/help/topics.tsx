@@ -98,14 +98,15 @@ export const HELP_TOPICS: HelpTopic[] = [
         <p>Amazon bietet keinen Export an. Deshalb gibt es ein kleines Skript, das du <strong>am PC</strong> in deinem Browser ausführst:</p>
         <ol>
           <li>In der App: Amazon → „Amazon-Datei importieren“ → <strong>Skript kopieren</strong> (oder als Textdatei laden). Optional „Nur Bestellungen ab“ wählen.</li>
-          <li>Auf amazon.de <strong>Meine Bestellungen</strong> öffnen und oben den Zeitraum wählen (z. B. „2026“).</li>
+          <li>Auf amazon.de <strong>Meine Bestellungen</strong> öffnen und oben den Zeitraum wählen – am besten das ganze Jahr (z. B. „2026“), nicht „letzte 3 Monate“, sonst fehlen Bestellungen am Rand. Doppelte werden beim Import ohnehin erkannt.</li>
           <li><strong>F12</strong> → Reiter <strong>Konsole</strong> → Skript einfügen → <strong>Enter</strong>. Chrome verlangt beim ersten Mal, dass du „Einfügen zulassen“ eintippst.</li>
           <li>Warten bis „Fertig“ (etwa 1 Sekunde pro Bestellung). Die Datei <em>amazon-….json</em> liegt in den Downloads.</li>
           <li>In der App unter „Schritt 2“ die Datei importieren.</li>
         </ol>
         <p>Das Skript läuft nur in deinem Browser und schickt nichts woandershin. Digitale Käufe (Prime Video, Kindle) werden ausgelassen – sie kommen als Abo über das Konto.</p>
         <p><strong>Nichts doppelt:</strong> Amazon-Abbuchungen auf dem Konto enthalten die Bestellnummer. Die App verknüpft beides – gezählt wird die Abbuchung, die Bestellung liefert die Artikel.</p>
-        <p>Wenn das Skript etwas meldet, das du nicht verstehst: den Text aus der Konsole aufheben, damit es angepasst werden kann.</p>
+        <p><strong>Prüfbericht:</strong> Am Ende listet das Skript in der Konsole Hinweise auf, z. B. „Artikel ergeben … €, Zwischensumme ist … €“ – dann wurde ein Artikel oder eine Menge nicht gelesen. Die Gesamtsumme stimmt trotzdem. Den Text aus der Konsole aufheben, damit das Skript angepasst werden kann.</p>
+        <p><strong>Amazon-Monatsabrechnung:</strong> Bezahlst du per Monatsabrechnung, zieht Amazon einmal im Monat eine Sammelsumme vom Konto ein. Die zählt nicht – gezählt werden die einzelnen Bestellungen aus der Amazon-Datei.</p>
       </>
     ),
   },
@@ -173,7 +174,7 @@ export const HELP_TOPICS: HelpTopic[] = [
           <tbody>
             <tr><th>Ausgabe</th><td>Einkäufe, Abos, Miete, Kreditraten, Zinsen</td></tr>
             <tr><th>Gespart</th><td>ETF-Sparplan, Geld aufs Depot oder Kinderkonto, Ansparung im Bausparvertrag – steht getrennt neben den Ausgaben</td></tr>
-            <tr><th>Zählt nicht</th><td>Umbuchungen zwischen deinen Konten, Kreditkarten-Abrechnung vom Girokonto, Bargeld abheben, Darlehensauszahlung</td></tr>
+            <tr><th>Zählt nicht</th><td>Umbuchungen zwischen deinen Konten, Kreditkarten-Abrechnung vom Girokonto, Amazon-Monatsabrechnung, Bargeld abheben, Darlehensauszahlung</td></tr>
             <tr><th>Einnahme</th><td>Gehalt, Kindergeld, Dividenden, Zinsen</td></tr>
             <tr><th>Erstattung</th><td>Gutschriften von Händlern – mindern die Ausgaben</td></tr>
           </tbody>
