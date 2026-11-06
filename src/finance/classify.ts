@@ -36,7 +36,7 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 6
+export const RULES_VERSION = 7
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
@@ -179,7 +179,8 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   }
 
   // Amazon-Monatsabrechnung: Sammelzahlung für Bestellungen, die einzeln aus dem Amazon-Import zählen
-  if (/monatsabrechnung/.test(text) && /amazon/.test(text)) return { kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' }
+  // (auch über einen Zahlungsdienst wie Riverty; die ING bricht Wörter um: "Monatsabrech nung")
+  if (hasPattern(text, 'monatsabrechnung') && /amazon/.test(text)) return { kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' }
 
   // 1. Kredite
   if (/darlehensauszahlung|kreditauszahlung/.test(text)) return { kind: 'transfer', counterparty: counterparty === row.counterparty ? 'Darlehensauszahlung' : counterparty }

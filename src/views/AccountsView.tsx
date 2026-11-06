@@ -8,6 +8,7 @@ import { formatDay, formatMonth, monthKey, shiftMonth } from '../stats/spending'
 import { ACCOUNT_KINDS, isSavingsKind } from '../finance/defaults'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 import { reclassifyImported } from '../import/bank'
+import { loadItemSummaries } from '../finance/purchases'
 
 const currentMonth = () => monthKey(new Date().toISOString())
 type Refs = NonNullable<ReturnType<typeof useFinanceRefs>>
@@ -92,11 +93,12 @@ export function AccountView() {
   const [fallback] = useState(currentMonth)
   const key = month ?? fallback
   const refs = useFinanceRefs()
-  const rows = useLiveQuery(
-    async () => (await db.transactions.where('date').startsWith(key).filter((t) => t.accountId === id).toArray()).sort((a, b) => b.date.localeCompare(a.date) || b.id! - a.id!),
-    [id, key],
-  )
-  if (!refs || !rows) return null
+  const data = useLiveQuery(async () => {
+    const rows = (await db.transactions.where('date').startsWith(key).filter((t) => t.accountId === id).toArray()).sort((a, b) => b.date.localeCompare(a.date) || b.id! - a.id!)
+    return { rows, items: await loadItemSummaries(db, rows) }
+  }, [id, key])
+  if (!refs || !data) return null
+  const { rows, items } = data
   const account = refs.accountById.get(id)
   if (!account) return <Navigate to="/konten" replace />
   const savingsAccount = isSavingsKind(account.kind)
@@ -137,14 +139,14 @@ export function AccountView() {
         {rows.length === 0 ? (
           <p className="muted empty-hint">In diesem Monat keine Buchungen.</p>
         ) : (
-          <ul className="rows">{rows.map((t) => <TransactionRow key={t.id} t={t} refs={refs} />)}</ul>
+          <ul className="rows">{rows.map((t) => <TransactionRow key={t.id} t={t} refs={refs} items={items.get(t.id!)} />)}</ul>
         )}
       </section>
     </>
   )
 }
 
-function TransactionRow({ t, refs }: { t: Transaction; refs: Refs }) {
+function TransactionRow({ t, refs, items }: { t: Transaction; refs: Refs; items?: string }) {
   const cat = t.categoryId ? refs.categoryById.get(t.categoryId) : undefined
   const isMove = t.kind === 'transfer' || t.kind === 'saving'
   const other = t.transferAccountId ? refs.accountById.get(t.transferAccountId) : undefined
@@ -159,7 +161,8 @@ function TransactionRow({ t, refs }: { t: Transaction; refs: Refs }) {
         </span>
         <div className="row-main">
           <span className="row-title">{t.counterparty || '—'}</span>
-          <span className="row-sub muted">{formatDay(t.date)} · {label}</span>
+          <span className="row-sub muted">{formatDay(t.date)} · {label}{t.viaTransactionId !== undefined && ' · über PayPal'}</span>
+          {items && <span className="row-sub muted row-items"><Icon name="package" size={12} /> {items}</span>}
         </div>
         <span className={`row-amount ${isMove ? 'amount-transfer' : t.amountCents > 0 ? 'amount-in' : 'amount-out'}`}>
           {t.amountCents > 0 ? '+' : '−'}{formatCents(Math.abs(t.amountCents))}

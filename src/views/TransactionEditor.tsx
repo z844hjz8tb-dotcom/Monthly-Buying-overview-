@@ -8,7 +8,8 @@ import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../fin
 import { reclassifyImported } from '../import/bank'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router-dom'
-import { formatDay } from '../stats/spending'
+import { formatDay, itemRows, refundsByOrder } from '../stats/spending'
+import { loadPurchaseDetails } from '../finance/purchases'
 
 type Mode = 'expense' | 'income' | 'transfer'
 const MODES: { id: Mode; label: string }[] = [
@@ -49,9 +50,11 @@ export function TransactionEditor() {
   const linked = useLiveQuery(async () => {
     if (routeId === undefined) return null
     const t = await db.transactions.get(routeId)
-    const receipt = t?.linkedReceiptId !== undefined ? await db.receipts.get(t.linkedReceiptId) : undefined
-    const order = t?.linkedOrderId ? await db.orders.get(t.linkedOrderId) : undefined
-    return { receipt, order }
+    if (!t) return null
+    const d = await loadPurchaseDetails(db, t)
+    const refunds = d.order ? refundsByOrder(await db.transactions.where('linkedOrderId').equals(d.order.orderId).toArray()) : undefined
+    const rows = d.order ? itemRows([d.order], d.orderItems, refunds) : []
+    return { ...d, rows, refunded: d.order ? refunds?.get(d.order.orderId) ?? 0 : 0 }
   }, [routeId])
 
   useEffect(() => {
@@ -179,6 +182,74 @@ export function TransactionEditor() {
 
   return (
     <>
+      {linked && (linked.via || linked.order || linked.receipt) && (
+        <section className="card">
+          <h2>Was wurde gekauft?</h2>
+          {linked.via && (
+            <Link to={`/buchung/${linked.via.id}`} className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="card" /></span>
+              <div className="row-main">
+                <span className="row-title">Über PayPal: {linked.via.counterparty}</span>
+                <span className="row-sub muted">{formatDay(linked.via.date)} · {formatCents(Math.abs(linked.via.amountCents))} · gezählt wird die PayPal-Zahlung</span>
+              </div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
+          )}
+          {linked.order && (
+            <>
+              <ul className="rows">
+                {linked.rows.map((r) => {
+                  const back = r.status === 'returned' || r.returnedQty >= r.quantity
+                  return (
+                    <li key={r.id} className={back ? 'inactive' : ''}>
+                      <div className="row-main">
+                        <span className="row-title">{r.title}</span>
+                        <span className="row-sub muted">
+                          {r.quantity > 1 && `${r.quantity} × ${r.unitPriceCents !== null ? formatCents(r.unitPriceCents) : '–'} `}
+                          {r.returnedQty > 0 && <span className="badge">{r.returnedQty < r.quantity ? `${r.returnedQty} × ` : ''}zurückgeschickt</span>}
+                        </span>
+                      </div>
+                      <span className="row-amount">{r.lineCents !== null ? formatCents(r.lineCents) : '–'}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+              <Link to={`/monat/${linked.order.date.slice(0, 7)}`} className="row-link">
+                <span className="avatar" aria-hidden="true"><Icon name="package" /></span>
+                <div className="row-main">
+                  <span className="row-title">Amazon-Bestellung vom {formatDay(linked.order.date)}</span>
+                  <span className="row-sub muted">{linked.order.orderId} · {formatCents(linked.order.totalCents)}{linked.refunded > 0 && ` · ${formatCents(linked.refunded)} erstattet`}</span>
+                </div>
+                <Icon name="right" size={18} className="chevron" />
+              </Link>
+            </>
+          )}
+          {linked.receipt && (
+            <>
+              <ul className="rows">
+                {linked.receiptLines.slice(0, 12).map((l) => (
+                  <li key={l.id}>
+                    <div className="row-main">
+                      <span className="row-title">{l.rawText}</span>
+                      {l.quantity > 1 && <span className="row-sub muted">{l.quantity} Stück</span>}
+                    </div>
+                    <span className="row-amount">{formatCents(l.priceCents)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link to={`/bon/${linked.receipt.id}`} className="row-link">
+                <span className="avatar" aria-hidden="true"><Icon name="receipt" /></span>
+                <div className="row-main">
+                  <span className="row-title">Kassenbon {linked.receipt.store}</span>
+                  <span className="row-sub muted">{formatDay(linked.receipt.date)} · {formatCents(linked.receipt.totalCents)}{linked.receiptLines.length > 12 ? ` · alle ${linked.receiptLines.length} Artikel` : ''}</span>
+                </div>
+                <Icon name="right" size={18} className="chevron" />
+              </Link>
+            </>
+          )}
+        </section>
+      )}
+
       <section className="card">
         <div className="segmented full-width" role="group" aria-label="Art der Buchung">
           {MODES.map((m) => (
@@ -244,32 +315,6 @@ export function TransactionEditor() {
               </button>
             ))}
           </div>
-        </section>
-      )}
-
-      {(linked?.receipt || linked?.order) && (
-        <section className="card">
-          <h2>Details</h2>
-          {linked.receipt && (
-            <Link to={`/bon/${linked.receipt.id}`} className="row-link">
-              <span className="avatar" aria-hidden="true"><Icon name="receipt" /></span>
-              <div className="row-main">
-                <span className="row-title">Kassenbon {linked.receipt.store}</span>
-                <span className="row-sub muted">{formatDay(linked.receipt.date)} · {formatCents(linked.receipt.totalCents)} · mit Artikeln</span>
-              </div>
-              <Icon name="right" size={18} className="chevron" />
-            </Link>
-          )}
-          {linked.order && (
-            <Link to={`/monat/${linked.order.date.slice(0, 7)}`} className="row-link">
-              <span className="avatar" aria-hidden="true"><Icon name="package" /></span>
-              <div className="row-main">
-                <span className="row-title">Amazon-Bestellung {linked.order.orderId}</span>
-                <span className="row-sub muted">{formatDay(linked.order.date)} · {formatCents(linked.order.totalCents)}</span>
-              </div>
-              <Icon name="right" size={18} className="chevron" />
-            </Link>
-          )}
         </section>
       )}
 
