@@ -97,6 +97,15 @@ export function SettingsView() {
   return (
     <>
       {message && <p className={`toast ${message.kind}`} role="status">{message.text}</p>}
+      <Link to="/hilfe" className="card reminder">
+        <span className="reminder-icon"><Icon name="help" /></span>
+        <span className="reminder-text">
+          <strong>Hilfe &amp; Anleitung</strong>
+          <span className="muted small">Monatsroutine, Importe, Bons, Konten, Backup</span>
+        </span>
+        <Icon name="right" className="chevron" />
+      </Link>
+
       <section className="card">
         <h2>Design</h2>
         <p className="muted small">Gilt nur auf diesem Gerät.</p>

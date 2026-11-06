@@ -1,4 +1,4 @@
-import { HashRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { HashRouter, Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { OverviewView } from './views/OverviewView'
 import { ImportView } from './views/ImportView'
 import { SettingsView } from './views/SettingsView'
@@ -12,6 +12,8 @@ import { HomeView } from './views/HomeView'
 import { AccountEditor, AccountsView, AccountView } from './views/AccountsView'
 import { TransactionEditor } from './views/TransactionEditor'
 import { BankImportView } from './views/BankImportView'
+import { HelpView } from './views/HelpView'
+import { helpTopicFor } from './help/topics'
 
 const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
   { to: '/start', label: 'Übersicht', icon: 'home' },
@@ -39,6 +41,7 @@ const TITLES: [string, string][] = [
   ['/import/bank', 'Umsätze importieren'],
   ['/import', 'Amazon-Import'],
   ['/einstellungen', 'Daten & Design'],
+  ['/hilfe', 'Hilfe & Anleitung'],
 ]
 
 function Header() {
@@ -48,6 +51,11 @@ function Header() {
     <header className="app-header">
       <span className="logo-mark" aria-hidden="true"><Icon name="up" size={18} /></span>
       <h1>{title}</h1>
+      {!pathname.startsWith('/hilfe') && (
+        <Link className="help-btn" to={`/hilfe/${helpTopicFor(pathname)}`} aria-label="Hilfe zu dieser Seite">
+          <Icon name="help" size={22} />
+        </Link>
+      )}
     </header>
   )
 }
@@ -79,6 +87,8 @@ export default function App() {
             <Route path="/import/bank" element={<BankImportView />} />
             <Route path="/import" element={<ImportView />} />
             <Route path="/einstellungen" element={<SettingsView />} />
+            <Route path="/hilfe" element={<HelpView />} />
+            <Route path="/hilfe/:topic" element={<HelpView key="topic" />} />
             <Route path="*" element={<Navigate to="/start" replace />} />
           </Routes>
         </main>

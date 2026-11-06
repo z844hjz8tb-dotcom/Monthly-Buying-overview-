@@ -107,7 +107,7 @@ export function BankImportView() {
         <p className="muted small">
           <strong>ING:</strong> Online-Banking am PC → Konto → Umsätze → Export → CSV.<br />
           <strong>American Express:</strong> Online-Konto am PC → Umsätze → Herunterladen → CSV.<br />
-          Die Datei wird nur auf diesem Gerät gelesen.
+          Die Datei wird nur auf diesem Gerät gelesen. <Link to="/hilfe/ing" className="text-link">Anleitung</Link>
           Bereits importierte Buchungen werden erkannt und nicht doppelt angelegt.
         </p>
         {state.step !== 'preview' && (
