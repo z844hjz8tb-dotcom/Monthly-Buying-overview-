@@ -193,6 +193,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     body: (
       <>
         <p>Grundregel: <strong>Geld zählt einmal</strong> – dort, wo es dein Konto wirklich verlässt.</p>
+        <p><strong>Tipp:</strong> In der Übersicht eine Kategorie antippen – dann siehst du jede Zahlung, die dort gezählt wird (mit Konto, Datum und, falls bekannt, den gekauften Artikeln). Von dort kommst du direkt in die Buchung, z. B. um die Kategorie zu ändern.</p>
         <table className="help-table">
           <tbody>
             <tr><th>Ausgabe</th><td>Einkäufe, Abos, Miete, Kreditraten, Zinsen</td></tr>
@@ -253,6 +254,7 @@ export function helpTopicFor(pathname: string): string {
     ['/buchung', 'kategorien'],
     ['/einstellungen', 'daten'],
     ['/start', 'zaehlen'],
+    ['/kategorie', 'zaehlen'],
   ]
   return map.find(([p]) => pathname.startsWith(p))?.[1] ?? 'ueberblick'
 }
