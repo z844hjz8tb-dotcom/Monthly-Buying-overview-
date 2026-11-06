@@ -107,6 +107,7 @@ export const HELP_TOPICS: HelpTopic[] = [
         <p><strong>Nichts doppelt:</strong> Amazon-Abbuchungen auf dem Konto enthalten die Bestellnummer. Die App verknüpft beides – gezählt wird die Abbuchung, die Bestellung liefert die Artikel.</p>
         <p><strong>Prüfbericht:</strong> Am Ende listet das Skript in der Konsole Hinweise auf, z. B. „Artikel ergeben … €, Zwischensumme ist … €“ – dann wurde ein Artikel oder eine Menge nicht gelesen. Die Gesamtsumme stimmt trotzdem. Den Text aus der Konsole aufheben, damit das Skript angepasst werden kann.</p>
         <p><strong>Amazon-Monatsabrechnung:</strong> Bezahlst du per Monatsabrechnung, zieht Amazon einmal im Monat eine Sammelsumme vom Konto ein. Die zählt nicht – gezählt werden die einzelnen Bestellungen aus der Amazon-Datei.</p>
+        <p><strong>Rücksendungen:</strong> Die Amazon-Datei zeigt eine Bestellung weiter mit dem vollen Betrag. Das Geld zurück kommt als Gutschrift aufs Konto bzw. die Karte und wird beim Bank-Import mit der Bestellung verrechnet. Nur komplett stornierte Bestellungen (nie bezahlt) erkennt schon das Skript.</p>
       </>
     ),
   },

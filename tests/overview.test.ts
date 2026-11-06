@@ -60,6 +60,24 @@ describe('monthOverview', () => {
     })
     expect(o.byCategory).toEqual([{ categoryId: 'online', cents: 3000, count: 2 }])
   })
+
+  it('Amazon-Rücksendung: Erstattung mindert die Bestellung, egal wie bezahlt wurde', () => {
+    const orders = [order('A', '2026-11-02', 5000)]
+    // bezahlt per Monatsabrechnung (zählt nicht), Erstattung mit Bestellnummer auf dem Girokonto
+    const viaInvoice = monthOverview('2026-11', {
+      transactions: [tx({ amountCents: -5000, kind: 'transfer' }), tx({ amountCents: 2000, categoryId: 'online', linkedOrderId: 'A' })],
+      orders,
+      receipts: [],
+    })
+    expect(viaInvoice.expenseCents).toBe(3000)
+    // bezahlt per Lastschrift mit Bestellnummer, Erstattung ebenso
+    const viaDebit = monthOverview('2026-11', {
+      transactions: [tx({ amountCents: -5000, categoryId: 'online', linkedOrderId: 'A' }), tx({ amountCents: 5000, categoryId: 'online', linkedOrderId: 'A' })],
+      orders,
+      receipts: [],
+    })
+    expect(viaDebit.expenseCents).toBe(0)
+  })
 })
 
 describe('Buchungen speichern', () => {
