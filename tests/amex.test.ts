@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
 import { TrackerDB } from '../src/db/schema'
 import { ensureDefaults } from '../src/finance/defaults'
-import { amexMerchant, isAmexExport, parseAmexCsv } from '../src/import/amex'
+import { amexMerchant, isAmexExport, isExcelFile, parseAmexCsv } from '../src/import/amex'
 import { applyBankImport, planBankImport } from '../src/import/bank'
 import { monthOverview } from '../src/stats/overview'
 
@@ -35,6 +35,31 @@ describe('Amex-Export lesen', () => {
     expect(amexMerchant('PENNY MUSTERSTADT       MUSTERSTADT')).toBe('PENNY MUSTERSTADT')
     expect(amexMerchant('IKEA DT. NL MUSTERSTADT MUSTERSTADT')).toBe('IKEA DT. NL MUSTERSTADT')
     expect(amexMerchant('GUTSCHRIFT FUER KARTENMISSBRAUCH')).toBe('GUTSCHRIFT FUER KARTENMISSBRAUCH')
+  })
+
+  it('liest den erweiterten Export mit mehr Spalten und Zeilenumbrüchen in Feldern', () => {
+    const ext = [
+      '\uFEFFDatum,Beschreibung,Karteninhaber,Konto #,Betrag,Weitere Details,Erscheint auf Ihrer Abrechnung als',
+      '03/10/2026,BAECKEREI MUSTER        MUSTERSTADT,MAX MUSTERMANN,-11111,"12,34","Referenz 123',
+      'Ort: Musterstadt",BAECKEREI MUSTER',
+      '04/10/2026,ZAHLUNG/ÜBERWEISUNG ERHALTEN BESTEN DANK,MAX MUSTERMANN,-11111,"-1.234,56",,',
+    ].join('\r\n')
+    expect(isAmexExport(ext)).toBe(true)
+    const ex = parseAmexCsv(ext)
+    expect(ex.rows).toHaveLength(2)
+    expect(ex.rows[0]).toMatchObject({ date: '2026-10-03', amountCents: -1234, counterparty: 'BAECKEREI MUSTER' })
+    expect(ex.rows[1]).toMatchObject({ date: '2026-10-04', amountCents: 123456 })
+  })
+
+  it('liest auch Semikolon als Trennzeichen (nach Speichern in Excel)', () => {
+    const semi = 'Datum;Beschreibung;Betrag\n03.10.2026;BAECKEREI MUSTER        MUSTERSTADT;12,34\n'
+    expect(isAmexExport(semi)).toBe(true)
+    expect(parseAmexCsv(semi).rows[0]).toMatchObject({ date: '2026-10-03', amountCents: -1234 })
+  })
+
+  it('erkennt eine Excel-Datei statt CSV', () => {
+    expect(isExcelFile(new Uint8Array([0x50, 0x4b, 3, 4]).buffer)).toBe(true)
+    expect(isExcelFile(new TextEncoder().encode('Datum,Beschreibung').buffer)).toBe(false)
   })
 
   it('gibt gleichen Zeilen am selben Tag unterschiedliche Schlüssel', () => {

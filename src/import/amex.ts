@@ -13,31 +13,48 @@ import type { BankExport } from './bank'
  * Manche Exporte haben zusätzliche Spalten (Karteninhaber, Konto #, …) – Spalten werden nach Namen gesucht.
  */
 
-function splitCsv(line: string): string[] {
-  const out: string[] = []
+/** CSV in Datensätze zerlegen; Felder in Anführungszeichen dürfen Trennzeichen und Zeilenumbrüche enthalten. */
+function parseCsv(text: string, sep: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
   let cur = ''
   let quoted = false
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i]
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
     if (quoted) {
-      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++ }
+      if (c === '"' && text[i + 1] === '"') { cur += '"'; i++ }
       else if (c === '"') quoted = false
       else cur += c
     } else if (c === '"') quoted = true
-    else if (c === ',') { out.push(cur); cur = '' }
-    else cur += c
+    else if (c === sep) { row.push(cur); cur = '' }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++
+      row.push(cur); cur = ''
+      if (row.some((f) => f.trim())) rows.push(row)
+      row = []
+    } else cur += c
   }
-  out.push(cur)
-  return out
+  row.push(cur)
+  if (row.some((f) => f.trim())) rows.push(row)
+  return rows
 }
 
-const HEADER = /^﻿?"?Datum"?,/
+const clean = (text: string) => text.replace(/^\uFEFF/, '')
+const firstLine = (text: string) => clean(text).split(/\r?\n/, 1)[0] ?? ''
+/** Trennzeichen aus der Kopfzeile: Komma (Standard) oder Semikolon (z. B. nach Öffnen in Excel). */
+const separator = (text: string) => (/^"?Datum"?;/i.test(firstLine(text)) ? ';' : ',')
+const headerCols = (text: string) => (parseCsv(firstLine(text), separator(text))[0] ?? []).map((c) => c.trim().toLowerCase())
 
 export function isAmexExport(text: string): boolean {
-  const first = text.split(/\r?\n/, 1)[0] ?? ''
-  if (!HEADER.test(first)) return false
-  const cols = splitCsv(first.replace(/^﻿/, '')).map((c) => c.trim().toLowerCase())
+  if (!/^"?Datum"?[,;]/i.test(firstLine(text))) return false
+  const cols = headerCols(text)
   return cols.includes('beschreibung') && cols.includes('betrag')
+}
+
+/** Excel-Datei (xlsx/xls) statt CSV – kommt vor, wenn bei Amex das falsche Format gewählt wurde. */
+export function isExcelFile(buf: ArrayBuffer): boolean {
+  const b = new Uint8Array(buf.slice(0, 4))
+  return (b[0] === 0x50 && b[1] === 0x4b) || (b[0] === 0xd0 && b[1] === 0xcf)
 }
 
 /** Händler aus der Beschreibung: "PENNY MUSTERSTADT   MUSTERSTADT" → "PENNY MUSTERSTADT" */
@@ -52,19 +69,18 @@ export function amexMerchant(description: string): string {
 
 export function parseAmexCsv(text: string): BankExport {
   if (!isAmexExport(text)) throw new Error('Das ist kein American-Express-Export (CSV mit den Spalten Datum, Beschreibung, Betrag).')
-  const lines = text.replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim())
-  const header = splitCsv(lines[0]).map((c) => c.trim().toLowerCase())
+  const records = parseCsv(clean(text), separator(text))
+  const header = records[0].map((c) => c.trim().toLowerCase())
   const iDate = header.indexOf('datum')
   const iDesc = header.indexOf('beschreibung')
   const iAmount = header.indexOf('betrag')
   const seen = new Map<string, number>()
   const rows: BankExport['rows'] = []
-  for (const line of lines.slice(1)) {
-    const c = splitCsv(line)
-    const m = (c[iDate] ?? '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  for (const c of records.slice(1)) {
+    const m = (c[iDate] ?? '').trim().match(/^(\d{2})[/.](\d{2})[/.](\d{4})$/)
     if (!m) continue
     const date = `${m[3]}-${m[2]}-${m[1]}`
-    const charge = Math.round(Number((c[iAmount] ?? '').trim().replace(/\./g, '').replace(',', '.')) * 100)
+    const charge = Math.round(Number((c[iAmount] ?? '').trim().replace(/\s|€/g, '').replace(/\./g, '').replace(',', '.')) * 100)
     if (!Number.isFinite(charge)) throw new Error(`Ungültiger Betrag: "${c[iAmount]}"`)
     const description = (c[iDesc] ?? '').trim()
     // gleiche Zeilen am selben Tag (z. B. zweimal 15,00 an derselben Tankstelle) bekommen eine laufende Nummer

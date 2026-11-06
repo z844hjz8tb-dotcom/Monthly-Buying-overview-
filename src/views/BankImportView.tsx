@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
 import { decodeBankFile, isIngExport, parseIngCsv } from '../import/ing'
-import { isAmexExport, parseAmexCsv } from '../import/amex'
+import { isAmexExport, isExcelFile, parseAmexCsv } from '../import/amex'
 import { applyBankImport, ingToBankExport, loadOwnNames, ownNamesFromCustomer, planBankImport, saveOwnNames, type BankExport, type ImportResult, type PlannedRow } from '../import/bank'
 import { findReceiptLinks } from '../finance/links'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
@@ -32,11 +32,13 @@ export function BankImportView() {
 
   async function readFile(file: File) {
     try {
-      const text = decodeBankFile(await file.arrayBuffer())
+      const buf = await file.arrayBuffer()
+      if (isExcelFile(buf)) throw new Error('Das ist eine Excel-Datei. Bitte beim Herunterladen das Format „CSV“ wählen (bei Amex: Umsätze → Herunterladen → CSV).')
+      const text = decodeBankFile(buf)
       let ex: BankExport
       if (isIngExport(text)) ex = ingToBankExport(parseIngCsv(text))
       else if (isAmexExport(text)) ex = parseAmexCsv(text)
-      else throw new Error('Diese Datei erkenne ich nicht. Möglich sind der ING-Export (Umsätze → Export → CSV) und der American-Express-Export (Umsätze → Herunterladen → CSV).')
+      else throw new Error('Diese Datei erkenne ich nicht. Möglich sind der ING-Export (Umsätze → Export → CSV) und der American-Express-Export (Umsätze → Herunterladen → CSV). Die Datei beginnt mit: „' + text.slice(0, 60).replace(/\s+/g, ' ').trim() + '“')
       // Eigene Namen beim ersten Import aus dem Dateikopf übernehmen
       const known = await loadOwnNames(db)
       if (!known.length && ex.customer) {
@@ -119,7 +121,7 @@ export function BankImportView() {
             <button onClick={() => input.current?.click()}><Icon name="file" size={18} />CSV-Datei wählen</button>
           </div>
         )}
-        <input ref={input} type="file" accept=".csv,text/csv" hidden onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
+        <input ref={input} type="file" accept=".csv,text/csv,text/plain,application/vnd.ms-excel" hidden onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
       </section>
 
       {state.step === 'error' && <p className="toast error" role="alert">{state.message}</p>}
