@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 type Api = {
   inferQuantities: (items: { quantity: number; unitPriceCents: number | null }[], subtotal: number) => void
+  isNetAmount: (text: string, subtotal: number, items: { quantity: number; unitPriceCents: number | null }[]) => boolean
   parseEuro: (s: string) => number | null
   parseGermanDate: (s: string) => string | null
   parseDetail: (doc: Document, id: string) => { orderId: string; date: string; totalCents: number; subtotalCents?: number; status: string; items: { title: string; quantity: number; unitPriceCents: number | null }[] } | null
@@ -48,6 +49,17 @@ describe('Amazon-Exportskript', () => {
     // Mengenfeld leer → zunächst 1 Stück; Zwischensumme 1.019,98 = 2 × 9,99 + 1.000,00 → Menge 2
     const html = fixture('amazon-detail-beispiel.html').replace('data-component="quantity"> 2 </div>', 'data-component="quantity"> </div>')
     expect(api.parseDetail(doc(html), 'x')?.items[0]).toMatchObject({ title: 'USB-C Kabel, 2 m, geflochten', quantity: 2 })
+  })
+
+  it('ignoriert eine Zwischensumme ohne Umsatzsteuer', () => {
+    // Artikel 2 × 9,99 + 1.000,00 = 1.019,98; netto (÷ 1,19) wären es 857,13 – daraus darf keine Menge entstehen
+    const html = fixture('amazon-detail-beispiel.html').replace('Zwischensumme: <span>1.019,98 €</span>', 'Zwischensumme: <span>857,13 €</span>')
+    const order = api.parseDetail(doc(html), 'x')
+    expect(order?.subtotalCents).toBeUndefined()
+    expect(order?.items[0].quantity).toBe(2)
+    const items = [{ quantity: 1, unitPriceCents: 1000 }]
+    expect(api.isNetAmount('Zwischensumme: 5,00 € USt.: 0,95 €', 500, items)).toBe(true)
+    expect(api.isNetAmount('Zwischensumme: 20,00 €', 2000, items)).toBe(false)
   })
 
   it('findet die Menge auch als Zahl am Produktbild', () => {

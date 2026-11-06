@@ -95,7 +95,9 @@
     }
 
     // Zwischensumme = Summe der Artikel (vor Versand/Rabatt). Fehlt Geld, steckt oft eine Menge > 1 dahinter.
-    const subtotal = parseEuro((chargeText.split(/Zwischensumme/i)[1] || '').split('€')[0])
+    // Bei vielen Bestellungen ist die "Zwischensumme" der Betrag ohne Umsatzsteuer – dann taugt sie nicht zum Abgleich.
+    const rawSubtotal = parseEuro((chargeText.split(/Zwischensumme/i)[1] || '').split('€')[0])
+    const subtotal = rawSubtotal !== null && !isNetAmount(chargeText, rawSubtotal, items) ? rawSubtotal : null
     if (subtotal !== null) inferQuantities(items, subtotal)
 
     const cancelledText = clean(doc.querySelector(S.cancelled)?.textContent)
@@ -120,6 +122,13 @@
       if (m && Number(m[1]) > 0) return Number(m[1])
     }
     return 1
+  }
+
+  /** Netto-Zwischensumme: Steuer wird ausgewiesen oder die Artikel ergeben genau Zwischensumme + 19 % bzw. 7 % */
+  function isNetAmount(chargeText, subtotal, items) {
+    if (/\b(USt|MwSt|Umsatzsteuer|Mehrwertsteuer)\b/i.test(chargeText)) return true
+    const sum = items.reduce((s, i) => s + (i.unitPriceCents ?? 0) * i.quantity, 0)
+    return [1.19, 1.07].some((f) => Math.abs(Math.round(subtotal * f) - sum) <= items.length + 1)
   }
 
   /** Ergänzt Mengen, wenn Stückpreis × Menge die fehlende Differenz zur Zwischensumme genau erklärt */
@@ -273,6 +282,6 @@
     alert(`Fertig: ${orders.length} Bestellungen exportiert${problems.length ? `, ${problems.length} Hinweise (siehe Konsole)` : ''}.\nDie Datei liegt in deinen Downloads.`)
   }
 
-  globalThis.__ausgabenAmazon = { CONFIG, parseEuro, parseGermanDate, parseDetail, orderIdsFromOverview, inferQuantities }
+  globalThis.__ausgabenAmazon = { CONFIG, parseEuro, parseGermanDate, parseDetail, orderIdsFromOverview, inferQuantities, isNetAmount }
   if (typeof location !== 'undefined' && /(^|\.)amazon\.de$/.test(location.hostname)) main().catch((e) => alert('Fehler: ' + e.message))
 })()
