@@ -4,6 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { compressImage } from '../lib/image'
 import { Icon } from '../components/Icon'
+import { ReceiptPaymentCard } from '../components/ReceiptLinks'
+import { findReceiptLinks } from '../finance/links'
 import { formatCents, parseEuroToCents } from '../lib/money'
 import { ReceiptTextImport } from '../components/ReceiptTextImport'
 import type { ParsedReceipt } from '../receipts/parse'
@@ -141,6 +143,8 @@ export function ReceiptEditor() {
         lines: parsed.map((l) => ({ ...l, priceCents: l.priceCents! })),
         image,
       })
+      // passende Kartenzahlung suchen und eindeutige Treffer verknüpfen
+      await findReceiptLinks(db)
       navigate(`/bons/${date.slice(0, 7)}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -259,6 +263,8 @@ export function ReceiptEditor() {
         )}
         {diff === 0 && parsed.length > 0 && <p className="status-box ok-text"><Icon name="check" size={18} />Summe stimmt</p>}
       </section>
+
+      {id !== undefined && <ReceiptPaymentCard receiptId={id} />}
 
       {error && <p className="toast error" role="alert">{error}</p>}
 

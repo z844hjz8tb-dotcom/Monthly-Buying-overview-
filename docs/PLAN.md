@@ -25,7 +25,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 - Haushaltsbuch H3 (Amex-Import): gleiche Import-Seite erkennt ING- und Amex-Datei automatisch. Mit den echten Dateien des Nutzers lokal geprüft (59 Amex-Buchungen) – nicht im Repo.
 
 - **Hilfe in der App** (`/hilfe`, `src/help/topics.tsx`): Anleitungen zu Monatsroutine, ING, Amex, Amazon-Skript, Bons, Konten, Kategorien, was zählt, Backup, FAQ; ?-Knopf oben öffnet das passende Thema. Bei geänderten Abläufen mitpflegen.
-- **Bekannte Lücke:** Bons werden noch nicht mit Kartenzahlungen verknüpft (H5) → Einkauf zählt doppelt, wenn Bon und Kontoauszug importiert sind. In der Hilfe so beschrieben.
+- Haushaltsbuch H5 (Bons ↔ Kartenzahlung, `src/finance/links.ts`): automatisch bei eindeutigem Laden + Betrag + Kaufdatum (±1 Tag, Kaufdatum aus „KAUFUMSATZ TT.MM“/ISO-Zeitstempel); unsichere Fälle (Coupon bis 2 €, Laden nicht erkennbar) als Vorschlag im Bons-Tab; „Bar bezahlt“ im Bon; läuft nach Bank-Import, nach Bon-Speichern und beim Start. Mit echtem Lidl-Bon + ING-Export lokal geprüft.
 
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
@@ -35,7 +35,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Skript am PC ausprobieren** – fertig (Amazon → „Amazon-Datei importieren“ → Schritt 1: Skript kopieren). Detailseite an echter Seite geprüft; das Laden der Übersichtsseiten (Amazon entschlüsselt sie erst im Browser, Skript lädt weitere Seiten in einem unsichtbaren Rahmen) kann nur der Nutzer testen → Rückmeldung abwarten.
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
-5. Ohne Laptop machbar: H6 (Fixkosten & Kredite, manuell), H7 (verschlüsseltes Backup), Erinnerung am Monatsersten. H5 (Verknüpfung Amazon/Bons ↔ Buchungen) sinnvoll erst nach den Importen.
+5. Danach: H6 (Fixkosten & Kredite), H7 (verschlüsseltes Backup), Erinnerung am Monatsersten.
 6. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
 
 **Hinweise**
@@ -120,7 +120,7 @@ Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (
 | H2 | ING-CSV-Import: Einordnung (Kredite, Wertpapierkauf=Sparen, eigene Konten über „Erkennen an“, eigene Namen, Amex-Abrechnung, Bargeld, Gehalt, Erstattungen), Duplikate über Datum+Betrag+Saldo, Lernen per „merken“, Amazon-Bestellnummer verknüpft | ✅ |
 | H3 | Amex-CSV-Import (Datum TT/MM/JJJJ, positiv = Belastung, Händler = erste 23 Zeichen); Ausgleich „Zahlung erhalten“ = Umbuchung vom Girokonto; Gutschriften = Erstattung; Duplikate über Datum+Betrag+Text+laufende Nummer | ✅ |
 | H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
-| H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen | ⏳ |
+| H5 | Verknüpfung Amazon-Bestellungen (Bestellnummer) und Bons (Laden/Betrag/Datum) mit Buchungen | ✅ |
 | H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau | ⏳ |
 | H7 | Verschlüsseltes Backup | ⏳ |
 

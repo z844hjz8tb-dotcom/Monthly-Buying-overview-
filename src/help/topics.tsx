@@ -127,6 +127,7 @@ export const HELP_TOPICS: HelpTopic[] = [
         <p>Danach <strong>prüfen</strong>: Steht „Summe stimmt“, ist alles gelesen. Bei einer Abweichung fehlt ein Artikel oder ein Preis ist falsch – Zeile korrigieren oder ergänzen. Unter „Erkannten Text anzeigen“ siehst du, was gelesen wurde.</p>
         <p><strong>Zuordnen:</strong> Bontexte wie „H-VOLLM. 3,5%“ ordnest du einmal einem Produkt zu („Vollmilch 3,5 %“). Die App merkt sich das für alle Läden – so entstehen die Top-Artikel mit dem günstigsten Laden.</p>
         <p>Pfand, Tüten und Rabattzeilen auf „Ignorieren“ setzen.</p>
+        <p><strong>Nichts doppelt:</strong> Hast du mit Karte bezahlt, verknüpft die App den Bon nach dem Bank-Import mit der Kartenzahlung. Im Bon siehst du unter „Bezahlung“, womit bezahlt wurde; bei Barzahlung dort „Bar bezahlt“ einschalten.</p>
       </>
     ),
   },
@@ -178,7 +179,7 @@ export const HELP_TOPICS: HelpTopic[] = [
           </tbody>
         </table>
         <p><strong>Amazon:</strong> Bestellungen werden über die Bestellnummer mit der Kontobuchung verknüpft. Dann zählt die Kontobuchung, die Bestellung liefert die Artikel. Ohne passende Kontobuchung zählt die Bestellung selbst.</p>
-        <p><strong>Kassenbons – noch nicht verknüpft:</strong> Die automatische Verknüpfung von Bons mit Kartenzahlungen auf dem Konto kommt noch. Bis dahin zählt ein Einkauf <strong>doppelt</strong>, wenn du den Bon erfasst <em>und</em> die Kartenzahlung importierst. Bar bezahlte Bons sind kein Problem.</p>
+        <p><strong>Kassenbons:</strong> Die App sucht zu jedem Bon die Kartenzahlung auf dem Konto (gleicher Laden, gleicher Betrag, Kaufdatum ±1 Tag) und verknüpft sie automatisch. Dann zählt die Kontobuchung, der Bon liefert die Artikel. Unsichere Fälle (z. B. Coupon an der Kasse, Zahlung über PayPal) zeigt der Bons-Tab unter „Zahlungen zuordnen“. Bar bezahlte Bons im Bon unter „Bezahlung“ als „Bar bezahlt“ markieren.</p>
       </>
     ),
   },

@@ -786,3 +786,5 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .help-table th, .help-table td { text-align: left; vertical-align: top; padding: 8px 6px; border-top: 1px solid var(--border); }
 .help-table tr:first-child th, .help-table tr:first-child td { border-top: 0; }
 .help-table th { width: 32%; font-weight: 700; }
+.link-suggestion { flex-direction: column; align-items: stretch; }
+.badge .icon { display: inline-block; vertical-align: -1px; }

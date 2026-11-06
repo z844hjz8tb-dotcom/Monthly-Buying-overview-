@@ -32,6 +32,8 @@ export interface Receipt {
   createdAt: string
   /** erfundene Beispieldaten */
   demo?: boolean
+  /** Bar bezahlt: keine Kontobuchung dazu suchen */
+  paidCash?: boolean
 }
 
 export interface ReceiptLine {
