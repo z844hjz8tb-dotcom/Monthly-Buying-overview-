@@ -791,3 +791,6 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 
 .row-items { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .row-items svg { flex: none; }
+
+a.saved, a.card-head { color: inherit; text-decoration: none; }
+a.card-head .row-amount { display: inline-flex; align-items: center; gap: 4px; }

@@ -53,10 +53,10 @@ export function HomeView() {
             <p className="hero-number">{formatCents(cur.expenseCents)}</p>
           </div>
           {cur.savingCents !== 0 && (
-            <div className="saved">
+            <Link to={`/gespart/${key}`} className="saved" aria-label="Gespart – Details">
               <p className="hero-label"><Icon name="piggy" size={14} />Gespart</p>
               <p className="saved-number">{formatCents(cur.savingCents)}</p>
-            </div>
+            </Link>
           )}
         </div>
         <p className="hero-sub">
@@ -114,19 +114,19 @@ export function HomeView() {
 
       {Object.keys(cur.savingByAccount).length > 0 && (
         <section className="card">
-          <div className="card-head">
+          <Link to={`/gespart/${key}`} className="card-head">
             <h2>Gespart</h2>
-            <span className="row-amount">{formatCents(cur.savingCents)}</span>
-          </div>
+            <span className="row-amount">{formatCents(cur.savingCents)} <Icon name="right" size={16} /></span>
+          </Link>
           <ul className="rows">
             {Object.entries(cur.savingByAccount).sort((a, b) => b[1] - a[1]).map(([accId, cents]) => {
               const acc = refs.accountById.get(accId)
               return (
                 <li key={accId}>
-                  <Link to={`/konto/${accId}/${key}`} className="row-link">
+                  <Link to={`/gespart/${key}`} className="row-link">
                     <span className="avatar cat" style={{ background: 'var(--cat-1)' }} aria-hidden="true"><Icon name={acc ? accountIcon(acc.kind) : 'piggy'} size={20} /></span>
                     <div className="row-main">
-                      <span className="row-title">{acc?.name ?? 'Spar-Konto'}</span>
+                      <span className="row-title">{acc?.name ?? 'Ziel noch offen'}</span>
                       <span className="row-sub muted">{cents < 0 ? 'Entnahme' : 'eingezahlt'}</span>
                     </div>
                     <span className="row-amount">{cents < 0 ? '−' : ''}{formatCents(Math.abs(cents))}</span>
