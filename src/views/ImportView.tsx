@@ -4,6 +4,7 @@ import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { AmazonScriptCard } from '../components/AmazonScriptCard'
 import { applyImport, parseAmazonExport, planImport, type ImportPlan } from '../import/amazon'
+import { linkAmazonByAmount } from '../finance/purchases'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
 
@@ -34,6 +35,7 @@ export function ImportView() {
     setBusy(true)
     try {
       await applyImport(db, plan)
+      await linkAmazonByAmount(db)
       setState({ step: 'done', added: plan.added.length, updated: plan.updated.length })
     } catch (e) {
       setState({ step: 'error', message: e instanceof Error ? e.message : String(e) })

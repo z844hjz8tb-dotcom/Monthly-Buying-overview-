@@ -9,6 +9,7 @@ import { RULES_VERSION } from './finance/classify'
 import { reclassifyImported } from './import/bank'
 import { findReceiptLinks } from './finance/links'
 import { linkPaypal } from './finance/paypal'
+import { linkAmazonByAmount } from './finance/purchases'
 
 applyLook()
 ensureDefaults(db)
@@ -21,6 +22,7 @@ ensureDefaults(db)
     }
     // Bons mit Kartenzahlungen verknüpfen (z. B. für Daten von vor diesem Update)
     await linkPaypal(db)
+    await linkAmazonByAmount(db)
     await findReceiptLinks(db)
   })
   .catch((e) => console.error('Standarddaten konnten nicht angelegt werden', e))

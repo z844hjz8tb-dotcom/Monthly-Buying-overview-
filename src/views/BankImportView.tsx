@@ -10,6 +10,7 @@ import { isAmexExport, isExcelFile, parseAmexCsv } from '../import/amex'
 import { applyBankImport, ingToBankExport, loadOwnNames, ownNamesFromCustomer, planBankImport, saveOwnNames, type BankExport, type ImportResult, type PlannedRow } from '../import/bank'
 import { findReceiptLinks } from '../finance/links'
 import { linkPaypal } from '../finance/paypal'
+import { linkAmazonByAmount } from '../finance/purchases'
 import { isPaypalExport, parsePaypalCsv } from '../import/paypal'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 
@@ -79,6 +80,7 @@ export function BankImportView() {
     try {
       const result = await applyBankImport(db, state.ex, state.accountId, state.plan)
       const paypalLinked = await linkPaypal(db)
+      await linkAmazonByAmount(db)
       const links = await findReceiptLinks(db)
       const fresh = state.plan.filter((p) => !p.duplicate)
       setState({

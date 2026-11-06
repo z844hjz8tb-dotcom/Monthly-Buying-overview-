@@ -189,3 +189,9 @@ it('Amazon-Monatsabrechnung ist eine Umbuchung (die Bestellungen zählen einzeln
   expect(c).toMatchObject({ kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' })
   expect(c.linkedOrderId).toBeUndefined()
 })
+
+it('Amazon-Monatsabrechnung über einen Zahlungsdienst, Wort vom Export umgebrochen', () => {
+  const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }] }
+  const c = classify({ date: '', amountCents: -4321, counterparty: 'Muster Zahlungsdienst S.A.', bookingText: 'Lastschrift', purpose: '000000000000000 Amazon Monatsabrech nung Juli 2026' }, ctx)
+  expect(c).toMatchObject({ kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' })
+})
