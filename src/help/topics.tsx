@@ -162,6 +162,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     body: (
       <>
         <p><strong>Konto anlegen:</strong> Konten → „Konto hinzufügen“. Arten: Girokonto, Tagesgeld, Depot, Kreditkarte, PayPal, Bargeld.</p>
+        <p><strong>Gespart im Detail:</strong> In der Übersicht auf „Gespart“ tippen – dort steht jede Sparbuchung mit Herkunftskonto, nach Ziel sortiert. „Ziel noch offen“ heißt: Das Zielkonto fehlt noch oder wurde nicht erkannt → Buchung antippen, Ziel wählen, „Für alle … merken“.</p>
         <ul>
           <li><strong>„Geld hierhin zählt als Sparen“</strong>: Geld auf dieses Konto erscheint als <em>Gespart</em> (getrennt neben den Ausgaben). Bei Depots voreingestellt.</li>
           <li><strong>„Erkennen an“</strong>: Namen, unter denen Überweisungen auf dieses Konto in der Bank-Datei stehen.</li>
@@ -256,6 +257,7 @@ export function helpTopicFor(pathname: string): string {
     ['/einstellungen', 'daten'],
     ['/start', 'zaehlen'],
     ['/kategorie', 'zaehlen'],
+    ['/gespart', 'konten'],
   ]
   return map.find(([p]) => pathname.startsWith(p))?.[1] ?? 'ueberblick'
 }

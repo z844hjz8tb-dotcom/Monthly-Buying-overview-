@@ -9,6 +9,7 @@ import { AssignView } from './views/AssignView'
 import { ProductsView } from './views/ProductsView'
 import { Icon, type IconName } from './components/Icon'
 import { CategoryView } from './views/CategoryView'
+import { SavingsView } from './views/SavingsView'
 import { HomeView } from './views/HomeView'
 import { AccountEditor, AccountsView, AccountView } from './views/AccountsView'
 import { TransactionEditor } from './views/TransactionEditor'
@@ -17,7 +18,7 @@ import { HelpView } from './views/HelpView'
 import { helpTopicFor } from './help/topics'
 
 const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
-  { to: '/start', label: 'Übersicht', icon: 'home', also: ['/kategorie'] },
+  { to: '/start', label: 'Übersicht', icon: 'home', also: ['/kategorie', '/gespart'] },
   { to: '/konten', label: 'Konten', icon: 'wallet', also: ['/konto', '/buchung', '/import/bank'] },
   { to: '/uebersicht', label: 'Amazon', icon: 'package', also: ['/monat'] },
   { to: '/bons', label: 'Bons', icon: 'receipt', also: ['/bon/', '/zuordnen', '/produkte'] },
@@ -28,6 +29,7 @@ const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
 const TITLES: [string, string][] = [
   ['/start', 'Übersicht'],
   ['/kategorie/', 'Kategorie'],
+  ['/gespart/', 'Gespart'],
   ['/konten', 'Konten'],
   ['/konto-neu', 'Neues Konto'],
   ['/konto/', 'Konto'],
@@ -72,6 +74,7 @@ export default function App() {
             <Route path="/start" element={<HomeView />} />
             <Route path="/start/:month" element={<HomeView />} />
             <Route path="/kategorie/:id/:month" element={<CategoryView />} />
+            <Route path="/gespart/:month" element={<SavingsView />} />
             <Route path="/konten" element={<AccountsView />} />
             <Route path="/konto-neu" element={<AccountEditor key="new" />} />
             <Route path="/konto/:id/bearbeiten" element={<AccountEditor />} />

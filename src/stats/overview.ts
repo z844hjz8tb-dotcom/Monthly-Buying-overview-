@@ -49,6 +49,8 @@ export interface MonthOverview {
   savingByAccount: Record<string, number>
   /** alle gezählten Ausgaben einzeln, neueste zuerst */
   entries: OverviewEntry[]
+  /** jede Sparbuchung einzeln: von welchem Konto, wohin (undefined = Ziel noch offen) */
+  savingEntries: { txId: number; date: string; title: string; cents: number; fromAccountId: string; toAccountId?: string }[]
 }
 
 export function receiptCategory(store: string): string {
@@ -65,6 +67,7 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
   let income = 0
 
   const entries: OverviewEntry[] = []
+  const savingEntries: MonthOverview['savingEntries'] = []
   const add = (categoryId: string, cents: number, source: string, e: Pick<OverviewEntry, 'date' | 'title' | 'ref'>) => {
     entries.push({ categoryId, cents, source, ...e })
     const c = cats.get(categoryId) ?? { categoryId, cents: 0, count: 0 }
@@ -87,6 +90,7 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
     if (!t.date.startsWith(key) || t.kind === 'transfer' || t.viaTransactionId !== undefined) continue
     if (t.kind === 'saving') {
       if (savingAccounts.has(t.accountId)) continue // Gegenbuchung auf dem Spar-Konto
+      savingEntries.push({ txId: t.id!, date: t.date, title: t.counterparty, cents: -t.amountCents, fromAccountId: t.accountId, toAccountId: t.transferAccountId })
       const target = t.transferAccountId ?? 'unbekannt'
       savingByAccount[target] = (savingByAccount[target] ?? 0) - t.amountCents
       saving -= t.amountCents
@@ -117,5 +121,6 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
     savingCents: saving,
     savingByAccount,
     entries: entries.sort((a, b) => b.date.localeCompare(a.date)),
+    savingEntries: savingEntries.sort((a, b) => b.date.localeCompare(a.date)),
   }
 }

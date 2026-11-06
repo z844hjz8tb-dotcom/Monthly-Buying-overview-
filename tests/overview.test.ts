@@ -171,6 +171,8 @@ describe('Umbuchungen und Sparen', () => {
     expect(o.incomeCents).toBe(1234)
     expect(o.savingCents).toBe(25000)
     expect(o.savingByAccount).toEqual({ depot: 20000, kind: 5000 })
+    // jede Sparbuchung einzeln mit Herkunft und Ziel (für die Seite "Gespart")
+    expect(o.savingEntries.map((e) => [e.fromAccountId, e.toAccountId, e.cents]).sort()).toEqual([['extra', 'kind', 5000], ['ing', 'depot', 20000]])
   })
 
   it('Geld zurück vom Depot mindert "Gespart" und ist keine Einnahme', () => {
