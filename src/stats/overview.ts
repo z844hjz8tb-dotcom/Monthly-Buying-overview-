@@ -63,7 +63,8 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
   const linkedOrders = new Set<string>()
   const linkedReceipts = new Set<number>()
   for (const t of transactions) {
-    if (t.linkedOrderId) linkedOrders.add(t.linkedOrderId)
+    // nur die Zahlung ersetzt die Bestellung; eine Erstattung mit Bestellnummer mindert sie nur
+    if (t.linkedOrderId && t.amountCents < 0) linkedOrders.add(t.linkedOrderId)
     if (t.linkedReceiptId !== undefined) linkedReceipts.add(t.linkedReceiptId)
   }
 
