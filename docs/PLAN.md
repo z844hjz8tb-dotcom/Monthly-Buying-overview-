@@ -18,10 +18,13 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Haushaltsbuch H1b: **Konten verwalten** (anlegen, Art, IBAN, Schalter „Geld hierhin zählt als Sparen“, manueller Stand, ausblenden), **Umbuchung von → nach** als zwei verbundene Buchungen, **„Gespart“ getrennt neben den Ausgaben** (Sparquote, Karte „Gespart“ je Zielkonto), Kontenliste getrennt in „Alltag“ und „Sparen & Anlagen“.
 
+- Haushaltsbuch H2 (ING-Import): CSV aus dem ING-Online-Banking (Daten → Importe bzw. Konten → „Umsätze importieren“). Vorschau mit Einordnung, Duplikat-Erkennung, Kontostand und IBAN aus der Datei, eigene Namen aus dem Dateikopf. Importierte Buchungen lassen sich einordnen; „Für alle … merken“ lernt Kategorie-Regeln bzw. „Erkennen an“ beim Zielkonto und ordnet alle gleichen Buchungen neu ein. Mit der echten Datei des Nutzers (504 Buchungen, Aug–Nov) lokal geprüft – die Datei ist **nicht** im Repo.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. **H2–H4 Importe ING, Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (CSV). Die Exporte gehen nur über die Webseiten am Laptop, nicht in den Apps → kommt, wenn der Nutzer am Laptop ist (zusammen mit den Amazon-Seiten für M2). Für ING am besten ein Girokonto-Export mit Umbuchung aufs Extra-Konto und einer Sparplan-Ausführung.
+1. **H3/H4 Importe Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (nur am Laptop/PC möglich). Danach PayPal-Abbuchungen auf der ING mit den PayPal-Zahlungen verknüpfen.
+   Offene Fragen an den Nutzer: Bausparkasse „U.A.“-Lastschrift (monatlich) = Kreditrate oder Sparrate? Eigene Kategorie „Hausbau“ (Architekt, Notar, Handwerker)? Weitere Kategorien (Gesundheit, Kinder, Haustier)?
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Konsolen-Skript** – ebenfalls Laptop: wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
@@ -56,6 +59,14 @@ Ziel: Alle Ausgaben an einem Ort – Girokonto (ING), Kreditkarte (American Expr
 | Uptevia | nur aufgelistet mit manuellem Stand, keine Buchungen |
 
 Technik: Umbuchung = zwei Buchungen (`kind` "transfer" oder "saving", `transferAccountId`, gegenseitige `pairId`); gezählt wird nur die Seite auf dem Alltagskonto.
+
+### ING-Export: Erkenntnisse (aus der echten Datei, ohne persönliche Daten)
+- ISO-8859-1, Semikolon, Kopfzeilen (IBAN, Kontoname, Kunde, Zeitraum, Saldo), dann `Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Referenz;Saldo;Währung;Betrag;Währung`.
+- **Keine Gegen-IBAN** in der Datei → Umbuchungen nur über Namen erkennbar (Kontoname, „Erkennen an“, eigene Namen).
+- Buchungstexte: Lastschrift (auch Visa-Debit „VISA …“), Gutschrift, Überweisung, Echtzeitüberweisung, Dauerauftrag / Terminueberweisung, **Wertpapierkauf** (Sparplan), Gehalt/Rente, Bezüge, Entgelt, Abschluss.
+- Die ING fügt im Verwendungszweck an Zeilenumbrüchen Leerzeichen ein („Servi ces“) → Muster erlauben ein eingeschobenes Leerzeichen.
+- Amazon-Lastschriften/-Gutschriften enthalten die Bestellnummer → `linkedOrderId`.
+- Girocard-Abhebung am Automaten: Empfänger = Bank, Verwendungszweck mit „Folgenr.“; Visa: „Bargeldauszahlung“.
 
 ### Grundregel gegen Doppelzählung
 Geld zählt **einmal, dort wo es das Konto verlässt**. Alles andere wird damit verknüpft:
@@ -99,7 +110,7 @@ Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (
 |---|---|---|
 | H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine | ✅ |
 | H1b | Konten verwalten, Umbuchungen von/nach, Sparen getrennt („Gespart“), manueller Stand | ✅ |
-| H2 | ING-CSV-Import mit Duplikat-Erkennung und Kategorie-Regeln; Umbuchungen über eigene IBANs erkennen und Gegenbuchungen verbinden; ETF-Sparplan als Sparen | ⏳ |
+| H2 | ING-CSV-Import: Einordnung (Kredite, Wertpapierkauf=Sparen, eigene Konten über „Erkennen an“, eigene Namen, Amex-Abrechnung, Bargeld, Gehalt, Erstattungen), Duplikate über Datum+Betrag+Saldo, Lernen per „merken“, Amazon-Bestellnummer verknüpft | ✅ |
 | H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung | ⏳ |
 | H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
 | H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen | ⏳ |

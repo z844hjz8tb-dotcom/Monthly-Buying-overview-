@@ -88,6 +88,8 @@ export interface Account {
   /** Manuell gepflegter Kontostand, z. B. für ein Aktienkonto ohne Buchungen */
   balanceCents?: number
   balanceDate?: string
+  /** Empfänger-/Auftraggeber-Namen, an denen Umbuchungen auf dieses Konto erkannt werden, z. B. "Notgroschen" */
+  matchNames?: string[]
   hidden?: boolean
   demo?: boolean
 }
@@ -130,6 +132,11 @@ export interface Transaction {
   /** Bei Umbuchung/Sparen: das andere Konto und die Gegenbuchung dort */
   transferAccountId?: string
   pairId?: number
+  /** Aus dem Bank-Export: Buchungstext (z. B. "Lastschrift") und Originalname */
+  bookingText?: string
+  rawCounterparty?: string
+  /** Vom Nutzer nachträglich geändert – wird beim erneuten Einordnen nicht überschrieben */
+  edited?: boolean
   createdAt: string
   demo?: boolean
 }

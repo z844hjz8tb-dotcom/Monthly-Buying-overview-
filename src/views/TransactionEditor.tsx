@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon'
 import { formatCents, parseEuroToCents } from '../lib/money'
 import { deleteTransaction, saveTransaction, saveTransfer, signedAmount, transferKind } from '../finance/store'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
+import { reclassifyImported } from '../import/bank'
 
 type Mode = 'expense' | 'income' | 'transfer'
 const MODES: { id: Mode; label: string }[] = [
@@ -41,6 +42,7 @@ export function TransactionEditor() {
   const [purpose, setPurpose] = useState('')
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
+  const [learn, setLearn] = useState(true)
 
   useEffect(() => {
     if (routeId === undefined) return
@@ -56,7 +58,7 @@ export function TransactionEditor() {
         setMode('transfer')
         // immer über die Ausgangsseite bearbeiten
         const outgoing = t.amountCents < 0
-        setAccountId(outgoing ? t.accountId : (t.transferAccountId ?? t.accountId))
+        setAccountId(outgoing ? t.accountId : (t.transferAccountId ?? ''))
         setToAccountId(outgoing ? t.transferAccountId : t.accountId)
         setEditId(outgoing || t.pairId === undefined ? t.id : t.pairId)
       } else {
@@ -70,6 +72,8 @@ export function TransactionEditor() {
 
   if (!refs || !loaded) return null
   const imported = !!existing && existing.source !== 'manual'
+  /** Bei importierten Buchungen steht das Bank-Konto fest; bei Umbuchungen wählt man nur die andere Seite */
+  const importOutgoing = imported && existing!.amountCents < 0
   const accounts = refs.visibleAccounts
   const from = refs.accountById.get(accountId)
   const to = toAccountId ? refs.accountById.get(toAccountId) : undefined
@@ -80,7 +84,9 @@ export function TransactionEditor() {
     const cents = parseEuroToCents(amount)
     if (cents === null || cents === 0) return setError('Bitte einen Betrag eingeben.')
     try {
-      if (mode === 'transfer') {
+      if (imported) {
+        await saveImported()
+      } else if (mode === 'transfer') {
         if (!toAccountId) return setError('Bitte das Zielkonto wählen.')
         await saveTransfer(db, { id: editId, fromAccountId: accountId, toAccountId, date, cents, counterparty, purpose })
       } else {
@@ -105,6 +111,36 @@ export function TransactionEditor() {
     }
   }
 
+  /** Importierte Buchung einordnen (Betrag/Konto bleiben) und auf Wunsch für alle gleichen Buchungen lernen. */
+  async function saveImported() {
+    const t = existing!
+    const other = mode === 'transfer' ? (importOutgoing ? toAccountId : accountId) : undefined
+    if (mode === 'transfer' && !other) throw new Error(importOutgoing ? 'Bitte das Zielkonto wählen.' : 'Bitte das Konto wählen, von dem das Geld kommt.')
+    if (mode === 'expense' && !categoryId) throw new Error('Bitte eine Kategorie wählen.')
+    const self = refs!.accountById.get(t.accountId)!
+    const otherAcc = other ? refs!.accountById.get(other) : undefined
+    const kind = mode === 'transfer' ? (otherAcc ? transferKind(self, otherAcc) : 'transfer') : mode
+    await saveTransaction(db, {
+      ...t,
+      kind,
+      categoryId: mode === 'expense' ? categoryId : undefined,
+      transferAccountId: mode === 'transfer' ? other : undefined,
+      counterparty: counterparty.trim() || t.counterparty,
+      purpose,
+      date,
+      edited: true,
+    })
+    if (learn) {
+      const name = t.rawCounterparty || t.counterparty
+      if (mode === 'expense' && categoryId) {
+        await db.categoryRules.add({ pattern: t.counterparty, field: 'counterparty', categoryId })
+      } else if (mode === 'transfer' && otherAcc && name) {
+        await db.accounts.update(otherAcc.id, { matchNames: [...new Set([...(otherAcc.matchNames ?? []), name])] })
+      }
+      await reclassifyImported(db)
+    }
+  }
+
   async function remove() {
     if (editId === undefined) return
     const msg = mode === 'transfer' ? 'Diese Umbuchung löschen? Beide Seiten werden entfernt.' : 'Diese Buchung löschen?'
@@ -113,10 +149,18 @@ export function TransactionEditor() {
     navigate(-1)
   }
 
-  const accountChips = (selected: string | undefined, onPick: (id: string) => void, exclude?: string) => (
+  function pickMode(m: Mode) {
+    setMode(m)
+    if (!imported) return
+    // Bank-Konto steht fest: bei Abgang ist es "Von", bei Eingang "Nach"
+    if (m === 'transfer' && !importOutgoing) { setToAccountId(existing!.accountId); setAccountId(existing!.transferAccountId ?? '') }
+    else { setAccountId(existing!.accountId); if (m === 'transfer') setToAccountId(existing!.transferAccountId) }
+  }
+
+  const accountChips = (selected: string | undefined, onPick: (id: string) => void, exclude?: string, locked = false) => (
     <div className="chips">
       {accounts.filter((a) => a.id !== exclude).map((a: Account) => (
-        <button key={a.id} type="button" className={`chip${selected === a.id ? ' active' : ''}`} onClick={() => onPick(a.id)} disabled={imported}>
+        <button key={a.id} type="button" className={`chip${selected === a.id ? ' active' : ''}`} onClick={() => onPick(a.id)} disabled={locked}>
           <Icon name={accountIcon(a.kind)} size={16} />{a.name}
         </button>
       ))}
@@ -128,7 +172,7 @@ export function TransactionEditor() {
       <section className="card">
         <div className="segmented full-width" role="group" aria-label="Art der Buchung">
           {MODES.map((m) => (
-            <button key={m.id} className={mode === m.id ? 'active' : ''} aria-pressed={mode === m.id} onClick={() => setMode(m.id)} disabled={imported || (routeId !== undefined && (m.id === 'transfer') !== (mode === 'transfer'))}>
+            <button key={m.id} className={mode === m.id ? 'active' : ''} aria-pressed={mode === m.id} onClick={() => pickMode(m.id)} disabled={!imported && routeId !== undefined && (m.id === 'transfer') !== (mode === 'transfer')}>
               {m.label}
             </button>
           ))}
@@ -162,11 +206,11 @@ export function TransactionEditor() {
 
       <section className="card">
         <h2>{mode === 'transfer' ? 'Von Konto' : 'Konto'}</h2>
-        {accountChips(accountId, (id) => { setAccountId(id); if (id === toAccountId) setToAccountId(undefined) })}
+        {accountChips(accountId, (id) => { setAccountId(id); if (id === toAccountId) setToAccountId(undefined) }, undefined, imported && (mode !== 'transfer' || importOutgoing))}
         {mode === 'transfer' && (
           <>
             <h2 style={{ marginTop: 12 }}>Nach Konto</h2>
-            {accountChips(toAccountId, setToAccountId, accountId)}
+            {accountChips(toAccountId, setToAccountId, accountId, imported && !importOutgoing)}
             {transferType && (
               <p className={`status-box ${transferType === 'saving' ? 'ok-text' : ''}`} style={transferType === 'transfer' ? { background: 'var(--surface-2)' } : undefined}>
                 <Icon name={transferType === 'saving' ? 'piggy' : 'swap'} size={18} />
@@ -193,7 +237,23 @@ export function TransactionEditor() {
         </section>
       )}
 
-      {imported && <p className="muted small">Importierte Buchung: Betrag, Konto und Art kommen aus der Bank-Datei. {existing && formatCents(existing.amountCents)}</p>}
+      {imported && (
+        <section className="card">
+          <p className="muted small">
+            Aus dem Bank-Import ({existing!.bookingText}, {formatCents(existing!.amountCents)}). Betrag und Bank-Konto lassen sich nicht ändern.
+            {existing!.purpose && <><br />Verwendungszweck: {existing!.purpose}</>}
+          </p>
+          {mode !== 'income' && (
+            <label className="toggle-row" style={{ marginTop: 10 }}>
+              <span>
+                <strong>Für alle Buchungen von „{existing!.counterparty}“ merken</strong>
+                <span className="muted small">{mode === 'expense' ? 'Gleiche Buchungen bekommen künftig diese Kategorie.' : 'Gleiche Buchungen werden künftig als Umbuchung mit diesem Konto erkannt.'}</span>
+              </span>
+              <input type="checkbox" role="switch" checked={learn} onChange={(e) => setLearn(e.target.checked)} />
+            </label>
+          )}
+        </section>
+      )}
       {error && <p className="toast error" role="alert">{error}</p>}
 
       <div className="button-row sticky-actions">

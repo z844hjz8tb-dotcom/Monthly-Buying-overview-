@@ -7,6 +7,7 @@ import { formatCents, parseEuroToCents } from '../lib/money'
 import { formatDay, formatMonth, monthKey, shiftMonth } from '../stats/spending'
 import { ACCOUNT_KINDS, isSavingsKind } from '../finance/defaults'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
+import { reclassifyImported } from '../import/bank'
 
 const currentMonth = () => monthKey(new Date().toISOString())
 type Refs = NonNullable<ReturnType<typeof useFinanceRefs>>
@@ -73,6 +74,7 @@ export function AccountsView() {
       <div className="button-row">
         <Link className="button" to="/konto-neu"><Icon name="plus" size={18} />Konto hinzufügen</Link>
         <Link className="button secondary" to="/buchung/neu?art=umbuchung"><Icon name="swap" size={18} />Umbuchung</Link>
+        <Link className="button secondary" to="/import/bank"><Icon name="download" size={18} />Umsätze importieren</Link>
       </div>
       {hidden.length > 0 && (
         <details className="card">
@@ -179,6 +181,7 @@ export function AccountEditor() {
   const [name, setName] = useState('')
   const [kind, setKind] = useState<Account['kind']>('savings')
   const [iban, setIban] = useState('')
+  const [matchNames, setMatchNames] = useState('')
   const [countsAsSaving, setCountsAsSaving] = useState(false)
   const [savingTouched, setSavingTouched] = useState(false)
   const [balance, setBalance] = useState('')
@@ -194,6 +197,7 @@ export function AccountEditor() {
       setName(a.name)
       setKind(a.kind)
       setIban(a.iban ?? '')
+      setMatchNames((a.matchNames ?? []).join(', '))
       setCountsAsSaving(!!a.countsAsSaving)
       setSavingTouched(true)
       setBalance(a.balanceCents !== undefined ? centsToInput(a.balanceCents) : '')
@@ -222,12 +226,16 @@ export function AccountEditor() {
       kind,
       order: isNew ? 100 + (await db.accounts.count()) : (await db.accounts.get(id!))!.order,
       iban: iban.replace(/\s+/g, '').toUpperCase() || undefined,
+      matchNames: matchNames.split(',').map((m) => m.trim()).filter(Boolean),
       countsAsSaving: countsAsSaving || undefined,
       balanceCents: cents ?? undefined,
       balanceDate: cents !== null ? balanceDate : undefined,
       hidden: hidden || undefined,
     }
+    if (!row.matchNames?.length) delete row.matchNames
     await db.accounts.put(row)
+    // geänderte Erkennung gleich auf bereits importierte Buchungen anwenden
+    await reclassifyImported(db)
     if (isNew) navigate(`/konto/${row.id}`, { replace: true })
     else navigate(-1)
   }
@@ -260,6 +268,10 @@ export function AccountEditor() {
         <label className="field">
           <span>IBAN (optional, für die automatische Erkennung von Umbuchungen)</span>
           <input value={iban} onChange={(e) => setIban(e.target.value)} placeholder="DE…" autoCapitalize="characters" />
+        </label>
+        <label className="field">
+          <span>Erkennen an (Empfänger-Namen bei Überweisungen, mit Komma getrennt)</span>
+          <input value={matchNames} onChange={(e) => setMatchNames(e.target.value)} placeholder="z. B. Notgroschen, Kleingeld Plus, Lena Muster" />
         </label>
       </section>
 

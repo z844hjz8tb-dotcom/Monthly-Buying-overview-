@@ -11,11 +11,12 @@ import { Icon, type IconName } from './components/Icon'
 import { HomeView } from './views/HomeView'
 import { AccountEditor, AccountsView, AccountView } from './views/AccountsView'
 import { TransactionEditor } from './views/TransactionEditor'
+import { BankImportView } from './views/BankImportView'
 
 const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
   { to: '/start', label: 'Übersicht', icon: 'home' },
-  { to: '/konten', label: 'Konten', icon: 'wallet', also: ['/konto', '/buchung'] },
-  { to: '/uebersicht', label: 'Amazon', icon: 'package', also: ['/monat', '/import'] },
+  { to: '/konten', label: 'Konten', icon: 'wallet', also: ['/konto', '/buchung', '/import/bank'] },
+  { to: '/uebersicht', label: 'Amazon', icon: 'package', also: ['/monat'] },
   { to: '/bons', label: 'Bons', icon: 'receipt', also: ['/bon/', '/zuordnen', '/produkte'] },
   { to: '/einstellungen', label: 'Daten', icon: 'database' },
 ]
@@ -35,6 +36,7 @@ const TITLES: [string, string][] = [
   ['/produkte', 'Produkte'],
   ['/monat', 'Amazon'],
   ['/uebersicht', 'Amazon'],
+  ['/import/bank', 'Umsätze importieren'],
   ['/import', 'Amazon-Import'],
   ['/einstellungen', 'Daten & Design'],
 ]
@@ -74,6 +76,7 @@ export default function App() {
             <Route path="/bon/:id" element={<ReceiptEditor />} />
             <Route path="/zuordnen" element={<AssignView />} />
             <Route path="/produkte" element={<ProductsView />} />
+            <Route path="/import/bank" element={<BankImportView />} />
             <Route path="/import" element={<ImportView />} />
             <Route path="/einstellungen" element={<SettingsView />} />
             <Route path="*" element={<Navigate to="/start" replace />} />
