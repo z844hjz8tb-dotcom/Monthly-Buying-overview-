@@ -32,7 +32,7 @@ export function AmazonScriptCard() {
       <h2>Schritt 1: Bestellungen bei Amazon holen</h2>
       <p className="muted small">Am PC im Browser (Chrome, Edge oder Firefox) – auf dem iPhone geht das nicht. <Link to="/hilfe/amazon" className="text-link">Anleitung</Link></p>
       <ol className="steps">
-        <li>Auf amazon.de <strong>Meine Bestellungen</strong> öffnen und oben den Zeitraum wählen (z. B. „2026“).</li>
+        <li>Auf amazon.de <strong>Meine Bestellungen</strong> öffnen und oben das ganze Jahr wählen (z. B. „2026“) – nicht „letzte 3 Monate“.</li>
         <li><strong>F12</strong> drücken → Reiter <strong>Konsole</strong>.</li>
         <li>Skript hier kopieren, in der Konsole einfügen und <strong>Enter</strong> drücken. Chrome verlangt beim ersten Mal, dass du „Einfügen zulassen“ eintippst.</li>
         <li>Warten, bis „Fertig“ erscheint – die Datei <em>amazon-…json</em> liegt dann in den Downloads.</li>

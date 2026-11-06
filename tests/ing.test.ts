@@ -182,3 +182,10 @@ it('Vorausdarlehen: Ansparung "U.A." ist Sparen, Zinsen sind Kredite', () => {
   // ohne Bausparvertrag-Konto: trotzdem "Gespart", Zielkonto offen
   expect(classify(row('00000000U01 U.A. 11.2026', -50000), { ...ctx, accounts: [accounts[0]] })).toMatchObject({ kind: 'saving', transferAccountId: undefined })
 })
+
+it('Amazon-Monatsabrechnung ist eine Umbuchung (die Bestellungen zählen einzeln)', () => {
+  const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }] }
+  const c = classify({ date: '', amountCents: -12345, counterparty: 'AMAZON PAYMENTS EUROPE S.C.A.', bookingText: 'Lastschrift', purpose: '000000000000000 Amazon Monatsabrechnung 09/2026' }, ctx)
+  expect(c).toMatchObject({ kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' })
+  expect(c.linkedOrderId).toBeUndefined()
+})

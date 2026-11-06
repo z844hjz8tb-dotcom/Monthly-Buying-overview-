@@ -6,9 +6,10 @@ const fixture = (name: string) => readFileSync(resolve(process.cwd(), 'tests/fix
 import { beforeAll, describe, expect, it } from 'vitest'
 
 type Api = {
+  inferQuantities: (items: { quantity: number; unitPriceCents: number | null }[], subtotal: number) => void
   parseEuro: (s: string) => number | null
   parseGermanDate: (s: string) => string | null
-  parseDetail: (doc: Document, id: string) => { orderId: string; date: string; totalCents: number; status: string; items: { title: string; quantity: number; unitPriceCents: number | null }[] } | null
+  parseDetail: (doc: Document, id: string) => { orderId: string; date: string; totalCents: number; subtotalCents?: number; status: string; items: { title: string; quantity: number; unitPriceCents: number | null }[] } | null
   orderIdsFromOverview: (doc: Document) => { id: string; date: string | null }[]
 }
 let api: Api
@@ -34,12 +35,27 @@ describe('Amazon-Exportskript', () => {
       orderId: '306-1234567-7654321',
       date: '2026-11-03',
       totalCents: 102497,
+      subtotalCents: 101998,
       status: 'ok',
       items: [
         { title: 'USB-C Kabel, 2 m, geflochten', quantity: 2, unitPriceCents: 999 },
         { title: 'Akkuschrauber 18 V', quantity: 1, unitPriceCents: 100000 },
       ],
     })
+  })
+
+  it('leitet eine fehlende Menge aus der Zwischensumme ab', () => {
+    // Mengenfeld leer → zunächst 1 Stück; Zwischensumme 1.019,98 = 2 × 9,99 + 1.000,00 → Menge 2
+    const html = fixture('amazon-detail-beispiel.html').replace('data-component="quantity"> 2 </div>', 'data-component="quantity"> </div>')
+    expect(api.parseDetail(doc(html), 'x')?.items[0]).toMatchObject({ title: 'USB-C Kabel, 2 m, geflochten', quantity: 2 })
+  })
+
+  it('findet die Menge auch als Zahl am Produktbild', () => {
+    const html = fixture('amazon-detail-beispiel.html')
+      .replace('data-component="quantity"> 2 </div>', 'data-component="quantity"> </div>')
+      .replace('<div data-component="itemImage"></div>', '<div data-component="itemImage"><span class="od-item-view-qty"><span>2</span></span></div>')
+      .replace('Zwischensumme: <span>1.019,98 €</span>', 'Zwischensumme: <span>9.999,99 €</span>')
+    expect(api.parseDetail(doc(html), 'x')?.items[0].quantity).toBe(2)
   })
 
   it('erkennt stornierte Bestellungen und fremde Seiten', () => {

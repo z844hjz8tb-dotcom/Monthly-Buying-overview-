@@ -211,6 +211,13 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 - **Detailseite**: fertig ausgeliefert, Felder mit `data-component` markiert (`orderId`, `orderDate`, `chargeSummary`, `itemTitle`, `quantity`, `unitPrice` mit `.a-offscreen`, `cancelled`) → stabil per `fetch` + `DOMParser` lesbar.
 - Amazon-Lastschriften auf der ING enthalten dieselbe Bestellnummer → Verknüpfung klappt (an einer echten Bestellung geprüft).
 
+### Erster Praxistest (06.11.2026, 26 Bestellungen Aug–Okt)
+- Gesamtsummen stimmen mit den ING-Abbuchungen überein (auch bei Abbuchung in mehreren Teilen).
+- Mengen > 1 wurden nicht gelesen → Skript-Version 2: Menge zusätzlich in Markierungen im Artikelblock suchen und aus der **Zwischensumme** ableiten; Prüfbericht bei Abweichung.
+- Bei zwei Bestellungen fehlen 5,99 € bzw. 6,99 € zu den Artikeln (Artikel nicht gelesen oder Versand) – offen, Detailseiten vom Nutzer angefragt.
+- „Amazon Monatsabrechnung“ auf der ING (Sammelzahlung ohne Bestellnummer) → Umbuchung, sonst Doppelzählung.
+- Zeitraum „letzte 3 Monate“ lässt Bestellungen am Rand weg → ganzes Jahr wählen.
+
 ## Amazon-Skript: bekannte Risiken
 
 - Die Bestellübersicht zeigt oft nur Bestellsummen. Einzelpreise stehen auf der Detailseite, also ein zusätzlicher Abruf pro Bestellung (mit Pause dazwischen).
