@@ -11,6 +11,7 @@ Persönliche PWA (React + TypeScript + Vite, Dexie/IndexedDB) für Amazon-Ausgab
 ## Wichtige Stellen
 - `src/db/schema.ts` – Datenmodell (Schema-Änderungen nur als neue Dexie-Version)
 - `src/import/amazon.ts` – Amazon-Austauschformat, Duplikate per Bestellnummer
+- `amazon-script/amazon-export.js` – Konsolen-Skript für amazon.de (in der App per `?raw` kopierbar); Parser getestet in `tests/amazon-script.test.ts` (happy-dom)
 - `src/receipts/parse.ts` – Bon-Leser für alle Läden; jede Anpassung mit Testfall in `tests/parse.test.ts`
 - `src/receipts/ocr.ts`, `src/receipts/pdf.ts` – lokale Bild- bzw. PDF-Texterkennung
 - `src/receipts/store.ts`, `src/normalize/match.ts` – Zuordnung Bontext → Produkt

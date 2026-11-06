@@ -28,7 +28,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 1. **H3/H4 Importe Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (nur am Laptop/PC möglich). Danach PayPal-Abbuchungen auf der ING mit den PayPal-Zahlungen verknüpfen.
    Bausparkasse geklärt (06.11.2026): zwei Vorausdarlehen – „Zins“-Lastschrift = Kredite, „U.A.“ (Ansparung in den Bausparvertrag) = Gespart; optional Konto „Bausparvertrag“ (Tagesgeld, zählt als Sparen) als Ziel.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
-3. **M2 Amazon-Konsolen-Skript** – ebenfalls Laptop: wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
+3. **M2 Amazon-Skript am PC ausprobieren** – fertig (Amazon → „Amazon-Datei importieren“ → Schritt 1: Skript kopieren). Detailseite an echter Seite geprüft; das Laden der Übersichtsseiten (Amazon entschlüsselt sie erst im Browser, Skript lädt weitere Seiten in einem unsichtbaren Rahmen) kann nur der Nutzer testen → Rückmeldung abwarten.
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.
 5. Ohne Laptop machbar: H6 (Fixkosten & Kredite, manuell), H7 (verschlüsseltes Backup), Erinnerung am Monatsersten. H5 (Verknüpfung Amazon/Bons ↔ Buchungen) sinnvoll erst nach den Importen.
 6. Später: Abgleich der Top-Artikel mit Prospektangeboten (siehe Abschnitt „Prospektangebote: Machbarkeit“); optional KI für Fotos von Papierbons.
@@ -165,7 +165,7 @@ tests/             Unit-Tests, tests/fixtures/ für Beispieldaten
 | # | Inhalt | Status |
 |---|---|---|
 | M1 | Projektgerüst, Datenbank, Backup-Export/-Import, PWA, GitHub-Pages-Deployment | ✅ |
-| M2 | Amazon-Konsolen-Skript (paginiert, lädt Detailseiten für Einzelpreise, Selektoren im `CONFIG`-Block, Prüfbericht am Ende) | ⏳ wartet auf gespeicherte Amazon-Seiten |
+| M2 | Amazon-Konsolen-Skript (`amazon-script/amazon-export.js`, in der App kopierbar): Bestellnummern aus der (im Browser entschlüsselten) Übersicht, weitere Seiten per unsichtbarem Rahmen, Details per `data-component`-Bezeichner, Selektoren im `CONFIG`-Block, Prüfbericht | ✅ gebaut, ⏳ Praxistest durch Nutzer |
 | M3 | Import mit Vorschau ("neu / aktualisiert / unverändert") und Duplikat-Erkennung | ✅ |
 | M4 | Jahresübersicht, Monatsübersicht, Artikelliste pro Monat → **Phase 1 fertig** | ✅ (mit Beispieldaten getestet) |
 | M5 | Kassenbon-Erfassung (manuell + Foto) mit Summenprüfung | ✅ |
@@ -200,6 +200,11 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 - `status`: `ok` (Standard), `cancelled` oder `returned`. Die beiden letzten zählen nicht zu den Ausgaben.
 - `unitPriceCents` darf `null` sein, wenn das Skript keinen Preis findet. Die Bestellsumme zählt trotzdem.
 - Monats- und Jahressummen basieren auf `totalCents` (inkl. Versand).
+
+## Amazon-Seiten: Erkenntnisse (06.11.2026)
+- **Übersicht** („Meine Bestellungen“): Inhalt der Bestellkarten ist im ausgelieferten HTML verschlüsselt (`csd-encrypted-sensitive`) und wird erst im Browser per JavaScript entschlüsselt → `fetch` der Übersicht nützt nichts; das Skript liest die geöffnete Seite und lädt weitere Seiten (`?page=N`) in einem unsichtbaren iframe.
+- **Detailseite**: fertig ausgeliefert, Felder mit `data-component` markiert (`orderId`, `orderDate`, `chargeSummary`, `itemTitle`, `quantity`, `unitPrice` mit `.a-offscreen`, `cancelled`) → stabil per `fetch` + `DOMParser` lesbar.
+- Amazon-Lastschriften auf der ING enthalten dieselbe Bestellnummer → Verknüpfung klappt (an einer echten Bestellung geprüft).
 
 ## Amazon-Skript: bekannte Risiken
 

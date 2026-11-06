@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
+import { AmazonScriptCard } from '../components/AmazonScriptCard'
 import { applyImport, parseAmazonExport, planImport, type ImportPlan } from '../import/amazon'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
@@ -56,8 +57,9 @@ export function ImportView() {
 
   return (
     <>
+      <AmazonScriptCard />
       <section className="card">
-        <h2>Amazon-Import</h2>
+        <h2>Schritt 2: Datei importieren</h2>
         <p className="muted">
           Wähle die JSON-Datei aus dem Amazon-Konsolen-Skript. Bestellungen, die schon da sind, werden
           anhand der Bestellnummer erkannt und nicht doppelt angelegt.
