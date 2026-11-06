@@ -179,7 +179,7 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   }
 
   // Amazon-Monatsabrechnung: Sammelzahlung für Bestellungen, die einzeln aus dem Amazon-Import zählen
-  // (auch über einen Zahlungsdienst wie Riverty; die ING bricht Wörter um: "Monatsabrech nung")
+  // (auch über einen Zahlungsdienst; die ING bricht Wörter um: "Monatsabrech nung")
   if (hasPattern(text, 'monatsabrechnung') && /amazon/.test(text)) return { kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' }
 
   // 1. Kredite
