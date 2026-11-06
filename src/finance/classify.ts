@@ -34,7 +34,19 @@ export interface ClassifyContext {
 export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAccountId' | 'counterparty' | 'linkedOrderId'>
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
+/** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
+export const RULES_VERSION = 2
+
 export const BUILTIN_RULES: [string, string][] = [
+  // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
+  ['*tierarzt', 'haustier'], ['*tierfachmarkt', 'haustier'], ['*haustier', 'haustier'], ['fressnapf', 'haustier'], ['zooplus', 'haustier'],
+  ['futterhaus', 'haustier'], ['tiernahrung', 'haustier'],
+  ['*apotheke', 'gesundheit'], ['*arzt', 'gesundheit'], ['*aerzte', 'gesundheit'], ['*praxis', 'gesundheit'], ['klinik', 'gesundheit'],
+  ['krankenhaus', 'gesundheit'], ['physio', 'gesundheit'], ['optik', 'gesundheit'], ['fielmann', 'gesundheit'], ['labor ', 'gesundheit'],
+  ['*kindergarten', 'schule'], ['kita', 'schule'], ['*schule', 'schule'], ['nachhilfe', 'schule'], ['hort ', 'schule'], ['schulbuch', 'schule'],
+  ['architekt', 'hausbau'], ['genehmigungsplanung', 'hausbau'], ['*notar', 'hausbau'], ['energieberat', 'hausbau'], ['baustoff', 'hausbau'],
+  ['baumaterial', 'hausbau'], ['bauunternehm', 'hausbau'], ['zimmerei', 'hausbau'], ['dachdecker', 'hausbau'], ['statiker', 'hausbau'],
+  ['vermessung', 'hausbau'], ['bauamt', 'hausbau'], ['baugenehmigung', 'hausbau'],
   // Abos vor Online-Shopping, damit "Amazon Prime Video" nicht bei Online landet
   ['prime video', 'abos'], ['amazon kids', 'abos'], ['amazon digital', 'abos'], ['audible', 'abos'], ['netflix', 'abos'],
   ['spotify', 'abos'], ['disney', 'abos'], ['apple.com bill', 'abos'], ['google payment', 'abos'], ['congstar', 'abos'],
@@ -43,7 +55,6 @@ export const BUILTIN_RULES: [string, string][] = [
   ['penny', 'lebensmittel'], ['netto', 'lebensmittel'], ['norma', 'lebensmittel'], ['markt ohg', 'lebensmittel'], ['*baeckerei', 'lebensmittel'],
   ['*backerei', 'lebensmittel'], ['backhaus', 'lebensmittel'], ['*metzgerei', 'lebensmittel'], ['*baeck', 'lebensmittel'], ['backstube', 'lebensmittel'], ['vinzenzmurr', 'lebensmittel'], ['*getranke', 'lebensmittel'], ['*getraenke', 'lebensmittel'],
   ['muller handels', 'drogerie'], ['muller vertrieb', 'drogerie'], ['mueller ', 'drogerie'], ['mueller handels', 'drogerie'], ['*drogerie', 'drogerie'], ['dm-drogerie', 'drogerie'], ['rossmann', 'drogerie'],
-  ['*apotheke', 'drogerie'],
   ['amazon', 'online'], ['amzn', 'online'], ['ebay', 'online'], ['zalando', 'online'], ['otto gmbh', 'online'], ['temu', 'online'], ['bergfreunde', 'online'],
   ['octopus energy', 'wohnen'], ['stadtwerke', 'wohnen'], ['strom', 'wohnen'], ['rundfunk', 'wohnen'], ['miete', 'wohnen'], ['hausverwaltung', 'wohnen'],
   ['baumarkt', 'wohnen'], ['obi ', 'wohnen'], ['hornbach', 'wohnen'], ['bauhaus', 'wohnen'], ['ikea', 'wohnen'], ['garten', 'wohnen'],
