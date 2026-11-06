@@ -85,8 +85,8 @@ describe('Einordnung', () => {
       ['Kleingeld Plus - Sparen', 'transfer', null],
       ['Notgroschen', 'transfer', 'notgroschen'],
       ['Lena Muster', 'saving', 'lena'],
-      ['Erika Muster und Max Muster', 'expense', 'kredite'],
-      ['Bausparkasse Muster AG', 'expense', 'kredite'],
+      ['Darlehensrate', 'expense', 'kredite'],
+      ['Bausparkasse: Zinsen', 'expense', 'kredite'],
       ['ING', 'expense', null],
       ['GC RE OCTOPUS ENERGY GERMANY GMBH', 'expense', 'wohnen'],
       ['Musterfirma GmbH', 'income', null],
@@ -194,4 +194,15 @@ it('Amazon-Monatsabrechnung über einen Zahlungsdienst, Wort vom Export umgebroc
   const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }] }
   const c = classify({ date: '', amountCents: -4321, counterparty: 'Muster Zahlungsdienst S.A.', bookingText: 'Lastschrift', purpose: '000000000000000 Amazon Monatsabrech nung Juli 2026' }, ctx)
   expect(c).toMatchObject({ kind: 'transfer', counterparty: 'Amazon Monatsabrechnung' })
+})
+
+it('Kreditbuchungen bekommen lesbare Namen (Zinsen, Tilgung, Rate)', () => {
+  const ctx = { accountId: 'ing', ownNames: ['Max Muster'], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }] }
+  const c = (counterparty: string, purpose: string) => classify({ date: '', amountCents: -10000, counterparty, bookingText: 'Lastschrift', purpose }, ctx)
+  expect(c('Bausparkasse Muster AG', '000001 Zins 12,34/ 000002 Zins 56,78/ 11.2026')).toMatchObject({ kind: 'expense', categoryId: 'kredite', counterparty: 'Bausparkasse: Zinsen' })
+  expect(c('Muster', 'Rahmenkredit 10/2026 Zinsen 12,34 EUR')).toMatchObject({ categoryId: 'kredite', counterparty: 'Rahmenkredit: Zinsen' })
+  expect(c('Muster', 'Rahmenkredit 10/2026 Tilgung 100,00 EUR')).toMatchObject({ categoryId: 'kredite', counterparty: 'Rahmenkredit: Tilgung' })
+  expect(c('Max Muster', 'Darlehensrate')).toMatchObject({ categoryId: 'kredite', counterparty: 'Darlehensrate' })
+  // Ansparung bleibt Sparen
+  expect(c('Bausparkasse Muster AG', '000001 U.A. 11.2026')).toMatchObject({ kind: 'saving' })
 })

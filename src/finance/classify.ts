@@ -36,7 +36,7 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 7
+export const RULES_VERSION = 8
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
@@ -152,6 +152,16 @@ function findAccountByName(name: string, ctx: ClassifyContext): Account | undefi
   )
 }
 
+/** Lesbarer Name für Kreditbuchungen, damit Zinsen, Tilgung und Raten in der Liste auseinanderzuhalten sind */
+export function loanLabel(text: string, fallback: string): string {
+  const what = /zins/.test(text) ? 'Zinsen' : /tilgung/.test(text) ? 'Tilgung' : 'Rate'
+  if (/bausparkasse|bausparvertrag/.test(text)) return `Bausparkasse: ${what}`
+  if (/rahmenkredit/.test(text)) return `Rahmenkredit: ${what}`
+  if (/darlehensrate|rate darlehen/.test(text)) return 'Darlehensrate'
+  if (/kreditrate/.test(text)) return 'Kreditrate'
+  return fallback
+}
+
 export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   const counterparty = displayCounterparty(row)
   const text = norm(`${row.counterparty} ${row.purpose}`)
@@ -189,7 +199,7 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
     const bauspar = ctx.accounts.find((a) => !a.demo && !a.hidden && (/bauspar/i.test(a.name) || (a.matchNames ?? []).some((m) => /bauspar/i.test(m))))
     return { kind: 'saving', transferAccountId: bauspar?.id, counterparty: counterparty === row.counterparty ? 'Bausparvertrag (Ansparung)' : counterparty }
   }
-  if (/darlehensrate|rate darlehen|rahmenkredit|bausparkasse|tilgung|kreditrate/.test(text)) return { kind: 'expense', categoryId: 'kredite', counterparty }
+  if (/darlehensrate|rate darlehen|rahmenkredit|bausparkasse|tilgung|kreditrate/.test(text)) return { kind: 'expense', categoryId: 'kredite', counterparty: loanLabel(text, counterparty) }
 
   // 2. Wertpapiere
   if (/^wertpapier/i.test(row.bookingText)) {

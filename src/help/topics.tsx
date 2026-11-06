@@ -193,6 +193,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     body: (
       <>
         <p>Grundregel: <strong>Geld zählt einmal</strong> – dort, wo es dein Konto wirklich verlässt.</p>
+        <p><strong>Kredite:</strong> Unter „Kredite“ stehen „Bausparkasse: Zinsen“, „Rahmenkredit: Zinsen/Tilgung“ und Darlehensraten. Die Ansparung in den Bausparvertrag („U.A.“) zählt nicht als Ausgabe, sondern oben unter „Gespart“.</p>
         <p><strong>Tipp:</strong> In der Übersicht eine Kategorie antippen – dann siehst du jede Zahlung, die dort gezählt wird (mit Konto, Datum und, falls bekannt, den gekauften Artikeln). Von dort kommst du direkt in die Buchung, z. B. um die Kategorie zu ändern.</p>
         <table className="help-table">
           <tbody>

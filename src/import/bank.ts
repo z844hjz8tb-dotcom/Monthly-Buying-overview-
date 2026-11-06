@@ -145,8 +145,9 @@ export async function reclassifyImported(db: TrackerDB): Promise<number> {
       { date: t.date, amountCents: t.amountCents, counterparty: t.rawCounterparty ?? t.counterparty, bookingText: t.bookingText ?? '', purpose: t.purpose ?? '' },
       contexts.get(t.accountId)!,
     )
-    if (c.kind !== t.kind || c.categoryId !== t.categoryId || c.transferAccountId !== t.transferAccountId) {
-      await db.transactions.update(t.id!, { kind: c.kind, categoryId: c.categoryId, transferAccountId: c.transferAccountId })
+    if (c.kind !== t.kind || c.categoryId !== t.categoryId || c.transferAccountId !== t.transferAccountId || c.counterparty !== t.counterparty) {
+      // Name gleich mit: eingebaute Regeln können lesbarere Namen liefern (z. B. "Bausparkasse: Zinsen")
+      await db.transactions.update(t.id!, { kind: c.kind, categoryId: c.categoryId, transferAccountId: c.transferAccountId, counterparty: c.counterparty })
       changed++
     }
   }
