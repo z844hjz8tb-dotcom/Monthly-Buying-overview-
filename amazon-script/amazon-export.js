@@ -212,6 +212,7 @@
       alert('Bitte zuerst "Meine Bestellungen" auf amazon.de öffnen und das Skript dort ausführen.')
       return
     }
+    log('Skript-Version 2 läuft. Rote Fehlermeldungen in der Konsole kommen von Amazon selbst und sind egal – wichtig sind nur Zeilen mit [Ausgaben-Tracker].')
     log('Sammle Bestellnummern …')
     const found = new Map()
     const add = (list) => list.forEach((o) => !found.has(o.id) && found.set(o.id, o))
@@ -267,7 +268,8 @@
     const today = new Date().toISOString().slice(0, 10)
     download(`amazon-${today}.json`, { format: 'ausgaben-tracker-amazon', version: 1, exportedAt: new Date().toISOString(), orders })
     console.table(orders.map((o) => ({ Bestellung: o.orderId, Datum: o.date, Summe: (o.totalCents / 100).toFixed(2), Artikel: o.items.length, Status: o.status })))
-    if (problems.length) console.warn('Hinweise:\n' + problems.join('\n'))
+    if (problems.length) log(`${problems.length} Hinweise (zum Kopieren: Rechtsklick → Kopieren):\n` + problems.join('\n'))
+    else log('Keine Hinweise – alle Bestellungen passen.')
     alert(`Fertig: ${orders.length} Bestellungen exportiert${problems.length ? `, ${problems.length} Hinweise (siehe Konsole)` : ''}.\nDie Datei liegt in deinen Downloads.`)
   }
 
