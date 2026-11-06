@@ -22,10 +22,12 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Kategorien ergänzt (06.11.2026): **Hausbau**, **Gesundheit**, **Haustier**, **Schule & Kita** (14 Kategorien). Bei geänderten eingebauten Regeln (`RULES_VERSION`) werden importierte Buchungen beim App-Start einmal neu eingeordnet.
 
+- Haushaltsbuch H3 (Amex-Import): gleiche Import-Seite erkennt ING- und Amex-Datei automatisch. Mit den echten Dateien des Nutzers lokal geprüft (59 Amex-Buchungen) – nicht im Repo.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. **H3/H4 Importe Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (nur am Laptop/PC möglich). Danach PayPal-Abbuchungen auf der ING mit den PayPal-Zahlungen verknüpfen.
+1. **H4 PayPal-Import** – wartet auf eine Beispiel-Exportdatei (nur am PC). Danach PayPal-Abbuchungen auf ING/Amex mit den PayPal-Zahlungen verknüpfen.
    Bausparkasse geklärt (06.11.2026): zwei Vorausdarlehen – „Zins“-Lastschrift = Kredite, „U.A.“ (Ansparung in den Bausparvertrag) = Gespart; optional Konto „Bausparvertrag“ (Tagesgeld, zählt als Sparen) als Ziel.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Skript am PC ausprobieren** – fertig (Amazon → „Amazon-Datei importieren“ → Schritt 1: Skript kopieren). Detailseite an echter Seite geprüft; das Laden der Übersichtsseiten (Amazon entschlüsselt sie erst im Browser, Skript lädt weitere Seiten in einem unsichtbaren Rahmen) kann nur der Nutzer testen → Rückmeldung abwarten.
@@ -113,7 +115,7 @@ Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (
 | H1 | Datenmodell, Konten, Kategorien, manuelle Buchung, neue Übersicht nach Kategorie, Navigation in Bausteine | ✅ |
 | H1b | Konten verwalten, Umbuchungen von/nach, Sparen getrennt („Gespart“), manueller Stand | ✅ |
 | H2 | ING-CSV-Import: Einordnung (Kredite, Wertpapierkauf=Sparen, eigene Konten über „Erkennen an“, eigene Namen, Amex-Abrechnung, Bargeld, Gehalt, Erstattungen), Duplikate über Datum+Betrag+Saldo, Lernen per „merken“, Amazon-Bestellnummer verknüpft | ✅ |
-| H3 | Amex-CSV-Import; Amex-Abrechnung auf dem Girokonto als Umbuchung | ⏳ |
+| H3 | Amex-CSV-Import (Datum TT/MM/JJJJ, positiv = Belastung, Händler = erste 23 Zeichen); Ausgleich „Zahlung erhalten“ = Umbuchung vom Girokonto; Gutschriften = Erstattung; Duplikate über Datum+Betrag+Text+laufende Nummer | ✅ |
 | H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
 | H5 | Verknüpfung Amazon-Bestellungen und Bons mit Buchungen | ⏳ |
 | H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau | ⏳ |

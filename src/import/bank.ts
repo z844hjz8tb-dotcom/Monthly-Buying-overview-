@@ -32,6 +32,35 @@ export async function buildContext(db: TrackerDB, accountId: string): Promise<Cl
   return { accountId, accounts, ownNames, rules }
 }
 
+/** Einheitliche Form eines Bank-Exports, egal von welcher Bank */
+export interface BankExport {
+  source: Transaction['source']
+  /** Name für die Anzeige, z. B. "ING-Umsatzexport" */
+  label: string
+  iban?: string
+  accountName?: string
+  customer?: string
+  saldoCents?: number
+  saldoDate?: string
+  /** Vorschlag, auf welches Konto importiert wird (z. B. "amex"), falls die IBAN nicht passt */
+  defaultAccountId: string
+  rows: (BankRow & { importKey: string; valueDate?: string })[]
+}
+
+export function ingToBankExport(ex: IngExport): BankExport {
+  return {
+    source: 'ing',
+    label: 'ING-Umsatzexport',
+    iban: ex.iban,
+    accountName: ex.accountName,
+    customer: ex.customer,
+    saldoCents: ex.saldoCents,
+    saldoDate: ex.saldoDate,
+    defaultAccountId: 'ing',
+    rows: ex.rows.map((r) => ({ ...r, importKey: ingImportKey(ex.iban, r) })),
+  }
+}
+
 export interface PlannedRow {
   row: BankRow & { valueDate?: string }
   importKey: string
@@ -40,16 +69,16 @@ export interface PlannedRow {
 }
 
 /** Vorschau: jede Zeile eingeordnet, Duplikate (schon importiert) markiert. Schreibt nichts. */
-export async function planIngImport(db: TrackerDB, ex: IngExport, accountId: string): Promise<PlannedRow[]> {
+export async function planBankImport(db: TrackerDB, ex: BankExport, accountId: string): Promise<PlannedRow[]> {
   const ctx = await buildContext(db, accountId)
-  const keys = ex.rows.map((r) => ingImportKey(ex.iban, r))
+  const keys = ex.rows.map((r) => r.importKey)
   const existing = new Set((await db.transactions.where('importKey').anyOf(keys).toArray()).map((t) => t.importKey))
-  return ex.rows.map((row, i) => {
+  return ex.rows.map((row) => {
     const c = classify(row, ctx)
     return {
       row,
-      importKey: keys[i],
-      duplicate: existing.has(keys[i]),
+      importKey: row.importKey,
+      duplicate: existing.has(row.importKey),
       tx: {
         accountId,
         date: row.date,
@@ -62,8 +91,8 @@ export async function planIngImport(db: TrackerDB, ex: IngExport, accountId: str
         categoryId: c.categoryId,
         transferAccountId: c.transferAccountId,
         linkedOrderId: c.linkedOrderId,
-        source: 'ing',
-        importKey: keys[i],
+        source: ex.source,
+        importKey: row.importKey,
       },
     }
   })
@@ -74,8 +103,8 @@ export interface ImportResult {
   skipped: number
 }
 
-/** Schreibt neue Buchungen, merkt sich IBAN und Kontostand. */
-export async function applyIngImport(db: TrackerDB, ex: IngExport, accountId: string, plan: PlannedRow[]): Promise<ImportResult> {
+/** Schreibt neue Buchungen, merkt sich IBAN und Kontostand (falls die Datei sie hat). */
+export async function applyBankImport(db: TrackerDB, ex: BankExport, accountId: string, plan: PlannedRow[]): Promise<ImportResult> {
   const fresh = plan.filter((p) => !p.duplicate)
   const now = new Date().toISOString()
   await db.transaction('rw', db.transactions, db.accounts, db.meta, async () => {
@@ -94,6 +123,11 @@ export async function applyIngImport(db: TrackerDB, ex: IngExport, accountId: st
   })
   return { added: fresh.length, skipped: plan.length - fresh.length }
 }
+
+/** Kurzformen für den ING-Export */
+export const planIngImport = (db: TrackerDB, ex: IngExport, accountId: string) => planBankImport(db, ingToBankExport(ex), accountId)
+export const applyIngImport = (db: TrackerDB, ex: IngExport, accountId: string, plan: PlannedRow[]) =>
+  applyBankImport(db, ingToBankExport(ex), accountId, plan)
 
 /**
  * Ordnet alle importierten, nicht von Hand geänderten Buchungen neu ein – z. B. nachdem

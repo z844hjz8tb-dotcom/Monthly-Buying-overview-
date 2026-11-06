@@ -38,7 +38,7 @@ describe('ING-Export lesen', () => {
     expect(ex.saldoCents).toBe(1234567)
     expect(ex.saldoDate).toBe('2026-11-06')
     expect(ex.rows).toHaveLength(23)
-    expect(ex.rows[10]).toMatchObject({ counterparty: 'Kleingeld Plus - Sparen', bookingText: 'Überweisung', amountCents: -41 })
+    expect(ex.rows[10]).toMatchObject({ counterparty: 'Kleingeld Plus - Sparen', bookingText: 'Überweisung', amountCents: -37 })
     expect(ex.rows[0]).toMatchObject({ date: '2026-11-06', amountCents: 1000000 })
   })
 
@@ -120,14 +120,14 @@ describe('Import', () => {
     await applyIngImport(db, ex, 'ing', await planIngImport(db, ex, 'ing'))
     const o = monthOverview('2026-11', {
       transactions: await db.transactions.toArray(),
-      orders: [{ orderId: '306-1234567-7654321', date: '2026-11-04', totalCents: 1999, source: 'amazon', importedAt: '', updatedAt: '' }],
+      orders: [{ orderId: '306-1234567-7654321', date: '2026-11-04', totalCents: 2499, source: 'amazon', importedAt: '', updatedAt: '' }],
       receipts: [],
       accounts: await db.accounts.toArray(),
     })
-    // Ausgaben Nov: Lidl 11,82 + Netflix 9,99 + Apple 2,99 + Amazon 19,99 − Erstattung 8,99 + Prime 9,99
-    //               + Darlehensrate 1000 + Bausparkasse 116,67 + Entgelt 1,49 + Octopus 55
-    expect(o.expenseCents).toBe(1182 + 999 + 299 + 1999 - 899 + 999 + 100000 + 11667 + 149 + 5500)
-    expect(o.savingCents).toBe(7500) // Sparplan Lena (Wertpapierkauf war im Oktober)
+    // Ausgaben Nov: Lidl 12,34 + Netflix 9,99 + Apple 2,99 + Amazon 24,99 − Erstattung 6,49 + Prime 9,99
+    //               + Darlehensrate 800 + Bausparkasse 98,76 + Entgelt 1,49 + Octopus 61
+    expect(o.expenseCents).toBe(1234 + 999 + 299 + 2499 - 649 + 999 + 80000 + 9876 + 149 + 6100)
+    expect(o.savingCents).toBe(4000) // Sparplan Lena (Wertpapierkauf war im Oktober)
     expect(o.incomeCents).toBe(0) // Darlehensauszahlung und eigene Gutschrift sind keine Einnahmen
     expect(o.bySource.amazon).toBeUndefined() // Bestellung über die ING-Buchung gezählt
   })
@@ -159,10 +159,10 @@ it('neue Kategorien: Hausbau, Gesundheit, Haustier, Schule', () => {
   expect(cat('Max Architekt', 'Entwurf und Genehmigungsplanung')).toBe('hausbau')
   expect(cat('Dr. A. Muster Notare', 'Rechnung 1')).toBe('hausbau')
   expect(cat('Energieberatung Muster GmbH')).toBe('hausbau')
-  expect(cat('VISA FRITZ-REUTER-APOTHEKE')).toBe('gesundheit')
+  expect(cat('VISA MUSTER-APOTHEKE')).toBe('gesundheit')
   expect(cat('Zahnarztpraxis Dr. Muster')).toBe('gesundheit')
   expect(cat('Tierarztpraxis Muster')).toBe('haustier')
-  expect(cat('VISA FELL FIT TIERFACHMARKT')).toBe('haustier')
+  expect(cat('VISA MUSTER TIERFACHMARKT')).toBe('haustier')
   expect(cat('AGILA Haustierversicherung AG')).toBe('haustier')
   expect(cat('Kindergartenver. St. Muster e.V.')).toBe('schule')
   expect(cat('Grundschule Musterstadt')).toBe('schule')
@@ -177,8 +177,8 @@ it('Vorausdarlehen: Ansparung "U.A." ist Sparen, Zinsen sind Kredite', () => {
   ]
   const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts }
   const row = (purpose: string, amountCents: number) => ({ date: '', amountCents, counterparty: 'Bausparkasse Muster AG', bookingText: 'Lastschrift', purpose })
-  expect(classify(row('00000000U01 U.A. 11.2026', -61541), ctx)).toMatchObject({ kind: 'saving', transferAccountId: 'bsv', counterparty: 'Bausparvertrag (Ansparung)' })
-  expect(classify(row('00000000U02 Zins 116,67/ 00000000U0 1 Zins 247,92/ 11.2026', -36459), ctx)).toMatchObject({ kind: 'expense', categoryId: 'kredite' })
+  expect(classify(row('00000000U01 U.A. 11.2026', -50000), ctx)).toMatchObject({ kind: 'saving', transferAccountId: 'bsv', counterparty: 'Bausparvertrag (Ansparung)' })
+  expect(classify(row('00000000U02 Zins 98,76/ 00000000U0 1 Zins 201,24/ 11.2026', -30000), ctx)).toMatchObject({ kind: 'expense', categoryId: 'kredite' })
   // ohne Bausparvertrag-Konto: trotzdem "Gespart", Zielkonto offen
-  expect(classify(row('00000000U01 U.A. 11.2026', -61541), { ...ctx, accounts: [accounts[0]] })).toMatchObject({ kind: 'saving', transferAccountId: undefined })
+  expect(classify(row('00000000U01 U.A. 11.2026', -50000), { ...ctx, accounts: [accounts[0]] })).toMatchObject({ kind: 'saving', transferAccountId: undefined })
 })
