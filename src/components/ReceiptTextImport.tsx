@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { compressImage } from '../lib/image'
 import { parseReceiptText, type ParsedReceipt } from '../receipts/parse'
+import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
 
 type Photo = { type: string; data: ArrayBuffer }
@@ -66,7 +67,7 @@ export function ReceiptTextImport({ onParsed }: { onParsed: (r: ParsedReceipt, p
       <h2>Bon einlesen</h2>
       <p className="muted small">
         Bild (z. B. Müller, Lidl) oder PDF-eBon (z. B. Kaufland, Penny) wählen. Die Erkennung läuft auf
-        deinem Gerät – beim ersten Mal werden einmalig ca. 5 MB geladen.
+        deinem Gerät – beim ersten Mal werden einmalig ca. 5 MB geladen. <Link to="/hilfe/bons" className="text-link">Anleitung</Link>
       </p>
       <div className="import-tiles">
         <button type="button" className="import-tile" onClick={() => imageInput.current?.click()} disabled={busy}>

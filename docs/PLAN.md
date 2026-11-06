@@ -24,6 +24,9 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Haushaltsbuch H3 (Amex-Import): gleiche Import-Seite erkennt ING- und Amex-Datei automatisch. Mit den echten Dateien des Nutzers lokal geprüft (59 Amex-Buchungen) – nicht im Repo.
 
+- **Hilfe in der App** (`/hilfe`, `src/help/topics.tsx`): Anleitungen zu Monatsroutine, ING, Amex, Amazon-Skript, Bons, Konten, Kategorien, was zählt, Backup, FAQ; ?-Knopf oben öffnet das passende Thema. Bei geänderten Abläufen mitpflegen.
+- **Bekannte Lücke:** Bons werden noch nicht mit Kartenzahlungen verknüpft (H5) → Einkauf zählt doppelt, wenn Bon und Kontoauszug importiert sind. In der Hilfe so beschrieben.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**

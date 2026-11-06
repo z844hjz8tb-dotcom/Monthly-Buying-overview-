@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import script from '../../amazon-script/amazon-export.js?raw'
+import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
 
 /** Schritt 1 des Amazon-Imports: Konsolen-Skript kopieren (am PC). */
@@ -29,7 +30,7 @@ export function AmazonScriptCard() {
   return (
     <section className="card">
       <h2>Schritt 1: Bestellungen bei Amazon holen</h2>
-      <p className="muted small">Am PC im Browser (Chrome, Edge oder Firefox) – auf dem iPhone geht das nicht.</p>
+      <p className="muted small">Am PC im Browser (Chrome, Edge oder Firefox) – auf dem iPhone geht das nicht. <Link to="/hilfe/amazon" className="text-link">Anleitung</Link></p>
       <ol className="steps">
         <li>Auf amazon.de <strong>Meine Bestellungen</strong> öffnen und oben den Zeitraum wählen (z. B. „2026“).</li>
         <li><strong>F12</strong> drücken → Reiter <strong>Konsole</strong>.</li>
