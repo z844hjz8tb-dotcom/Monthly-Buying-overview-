@@ -169,3 +169,16 @@ it('neue Kategorien: Hausbau, Gesundheit, Haustier, Schule', () => {
   expect(cat('HUK-Coburg Versicherung')).toBe('versicherungen')
   expect(cat('Rossmann 1234')).toBe('drogerie')
 })
+
+it('Vorausdarlehen: Ansparung "U.A." ist Sparen, Zinsen sind Kredite', () => {
+  const accounts = [
+    { id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 },
+    { id: 'bsv', name: 'Bausparvertrag', kind: 'savings' as const, order: 2, countsAsSaving: true },
+  ]
+  const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts }
+  const row = (purpose: string, amountCents: number) => ({ date: '', amountCents, counterparty: 'Bausparkasse Muster AG', bookingText: 'Lastschrift', purpose })
+  expect(classify(row('00000000U01 U.A. 11.2026', -61541), ctx)).toMatchObject({ kind: 'saving', transferAccountId: 'bsv', counterparty: 'Bausparvertrag (Ansparung)' })
+  expect(classify(row('00000000U02 Zins 116,67/ 00000000U0 1 Zins 247,92/ 11.2026', -36459), ctx)).toMatchObject({ kind: 'expense', categoryId: 'kredite' })
+  // ohne Bausparvertrag-Konto: trotzdem "Gespart", Zielkonto offen
+  expect(classify(row('00000000U01 U.A. 11.2026', -61541), { ...ctx, accounts: [accounts[0]] })).toMatchObject({ kind: 'saving', transferAccountId: undefined })
+})

@@ -26,7 +26,7 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 **Nächste Schritte**
 1. **H3/H4 Importe Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (nur am Laptop/PC möglich). Danach PayPal-Abbuchungen auf der ING mit den PayPal-Zahlungen verknüpfen.
-   Offene Frage an den Nutzer: Bausparkasse „U.A.“-Lastschrift (monatlich) = Tilgung (Kredite) oder Einzahlung in den Bausparvertrag (Gespart)? Nutzer prüft Vertrag/Jahresauszug; bis dahin Kredite.
+   Bausparkasse geklärt (06.11.2026): zwei Vorausdarlehen – „Zins“-Lastschrift = Kredite, „U.A.“ (Ansparung in den Bausparvertrag) = Gespart; optional Konto „Bausparvertrag“ (Tagesgeld, zählt als Sparen) als Ziel.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Konsolen-Skript** – ebenfalls Laptop: wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.

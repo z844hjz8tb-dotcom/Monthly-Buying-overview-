@@ -4,7 +4,8 @@ import { transferKind } from './store'
 /**
  * Ordnet eine Bank-Buchung ein: Ausgabe (mit Kategorie), Erstattung, Einnahme, Umbuchung oder Sparen.
  * Reihenfolge der Prüfungen (die erste passende gewinnt):
- *   1. Kredite (Darlehensrate, Rahmenkredit, Bausparkasse) → Ausgabe "Kredite"; Darlehensauszahlung → Umbuchung
+ *   1. Kredite (Darlehensrate, Rahmenkredit, Bausparkasse) → Ausgabe "Kredite"; Darlehensauszahlung → Umbuchung;
+ *      Bausparkasse-Ansparung ("U.A.", Sparbeitrag) beim Vorausdarlehen → Sparen (in den Bausparvertrag)
  *   2. Wertpapierkauf/-verkauf → Sparen (aufs Depot) bzw. Entnahme
  *   3. Empfänger passt zu einem eigenen Konto (Name oder "Erkennen an") → Umbuchung oder Sparen
  *   4. Eigene Namen (z. B. "Max Muster") → Umbuchung, Zielkonto offen
@@ -35,7 +36,7 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 2
+export const RULES_VERSION = 3
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
@@ -160,6 +161,11 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
 
   // 1. Kredite
   if (/darlehensauszahlung|kreditauszahlung/.test(text)) return { kind: 'transfer', counterparty: counterparty === row.counterparty ? 'Darlehensauszahlung' : counterparty }
+  // Vorausdarlehen: Zinsen sind Kosten (Kredite), die Ansparung in den Bausparvertrag baut Vermögen auf (Sparen)
+  if (/bausparkasse|bausparvertrag/.test(text) && /\bu\.\s?a\.|ansparung|sparbeitrag|regelspar|sparrate/.test(text) && !/zins/.test(text)) {
+    const bauspar = ctx.accounts.find((a) => !a.demo && !a.hidden && (/bauspar/i.test(a.name) || (a.matchNames ?? []).some((m) => /bauspar/i.test(m))))
+    return { kind: 'saving', transferAccountId: bauspar?.id, counterparty: counterparty === row.counterparty ? 'Bausparvertrag (Ansparung)' : counterparty }
+  }
   if (/darlehensrate|rate darlehen|rahmenkredit|bausparkasse|tilgung|kreditrate/.test(text)) return { kind: 'expense', categoryId: 'kredite', counterparty }
 
   // 2. Wertpapiere
