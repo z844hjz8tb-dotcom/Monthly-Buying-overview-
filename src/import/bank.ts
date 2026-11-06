@@ -1,6 +1,7 @@
 import type { Transaction, TrackerDB } from '../db/schema'
 import { classify, type BankRow, type ClassifyContext } from '../finance/classify'
 import { ingImportKey, type IngExport } from './ing'
+import { settlePaypalRepayments } from '../finance/paypal'
 
 export const OWN_NAMES_KEY = 'ownNames'
 
@@ -149,5 +150,6 @@ export async function reclassifyImported(db: TrackerDB): Promise<number> {
       changed++
     }
   }
-  return changed
+  // Rückzahlungen an PayPal brauchen den Zusammenhang mit anderen Buchungen
+  return changed + (await settlePaypalRepayments(db))
 }

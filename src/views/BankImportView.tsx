@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
@@ -40,7 +41,7 @@ export function BankImportView() {
       let ex: BankExport
       if (isIngExport(text)) ex = ingToBankExport(parseIngCsv(text))
       else if (isAmexExport(text)) ex = parseAmexCsv(text)
-      else if (isPaypalExport(text)) ex = parsePaypalCsv(text)
+      else if (isPaypalExport(text)) ex = parsePaypalCsv(text, file.name)
       else throw new Error('Diese Datei erkenne ich nicht. Möglich sind der ING-Export (Umsätze → Export → CSV), der American-Express-Export (Umsätze → Herunterladen → CSV) und der PayPal-Export (Aktivitäten → Kontoauszüge → CSV). Die Datei beginnt mit: „' + text.slice(0, 60).replace(/\s+/g, ' ').trim() + '“')
       // Eigene Namen beim ersten Import aus dem Dateikopf übernehmen
       const known = await loadOwnNames(db)
@@ -51,7 +52,9 @@ export function BankImportView() {
       }
       const accounts = await db.accounts.toArray()
       const byIban = ex.iban ? accounts.find((a) => a.iban === ex.iban) : undefined
-      const accountId = byIban?.id ?? (accounts.some((a) => a.id === ex.defaultAccountId) ? ex.defaultAccountId : 'ing')
+      // PayPal: ohne bekannte Konto-ID ein PayPal-Konto nehmen, das noch keiner Datei zugeordnet ist
+      const freePaypal = ex.source === 'paypal' && ex.iban ? accounts.find((a) => a.kind === 'paypal' && !a.iban && !a.hidden && !a.demo) : undefined
+      const accountId = byIban?.id ?? freePaypal?.id ?? (accounts.some((a) => a.id === ex.defaultAccountId) ? ex.defaultAccountId : 'ing')
       setState({ step: 'preview', fileName: file.name, ex, accountId, plan: await planBankImport(db, ex, accountId) })
     } catch (e) {
       setState({ step: 'error', message: e instanceof Error ? e.message : String(e) })
@@ -136,7 +139,7 @@ export function BankImportView() {
         <>
           <section className="card">
             <h2>Auf welches Konto?</h2>
-            <p className="muted small">{state.ex.label}{state.ex.accountName ? ` · ${state.ex.accountName}` : ''}{state.ex.iban ? ` · IBAN …${state.ex.iban.slice(-4)}` : ''} · {state.plan.length} Buchungen in der Datei</p>
+            <p className="muted small">{state.ex.label}{state.ex.accountName ? ` · ${state.ex.accountName}` : ''}{state.ex.iban ? ` · ${state.ex.source === 'paypal' ? 'Konto' : 'IBAN'} …${state.ex.iban.slice(-4)}` : ''} · {state.plan.length} Buchungen in der Datei</p>
             <div className="chips">
               {refs.visibleAccounts.filter((a) => a.kind !== 'cash' && (state.ex.source === 'paypal') === (a.kind === 'paypal')).map((a) => (
                 <button key={a.id} className={`chip${state.accountId === a.id ? ' active' : ''}`} onClick={() => changeAccount(a.id)}>
@@ -144,6 +147,9 @@ export function BankImportView() {
                 </button>
               ))}
             </div>
+            {state.ex.source === 'paypal' && (
+              <PaypalAccountHint ex={state.ex} accountId={state.accountId} plan={state.plan} onCreate={changeAccount} />
+            )}
           </section>
 
           <section className="card">
@@ -240,5 +246,43 @@ export function BankImportView() {
         </section>
       )}
     </>
+  )
+}
+
+/**
+ * Mehrere PayPal-Konten (z. B. Partner): warnt, wenn die Datei offenbar zu einem anderen PayPal-Konto gehört,
+ * und legt auf Wunsch ein neues an.
+ */
+function PaypalAccountHint({ ex, accountId, plan, onCreate }: { ex: BankExport; accountId: string; plan: PlannedRow[]; onCreate: (id: string) => void }) {
+  const info = useLiveQuery(async () => {
+    const acc = await db.accounts.get(accountId)
+    const dates = ex.rows.map((r) => r.date).sort()
+    const overlap = dates.length
+      ? await db.transactions.where('accountId').equals(accountId).filter((t) => t.source === 'paypal' && t.date >= dates[0] && t.date <= dates[dates.length - 1]).count()
+      : 0
+    return { acc, overlap }
+  }, [accountId, ex])
+  if (!info?.acc) return null
+  const otherId = !!ex.iban && !!info.acc.iban && info.acc.iban !== ex.iban
+  const noDuplicates = info.overlap > 0 && plan.every((p) => !p.duplicate)
+  if (!otherId && !noDuplicates) return null
+
+  async function create() {
+    const id = `k-${Date.now().toString(36)}`
+    const n = await db.accounts.filter((a) => a.kind === 'paypal').count()
+    await db.accounts.add({ id, name: `PayPal ${n + 1}`, kind: 'paypal', iban: ex.iban, order: 100 + (await db.accounts.count()) })
+    onCreate(id)
+  }
+
+  return (
+    <div className="status-box warn" style={{ marginTop: 10 }}>
+      <Icon name="alert" size={18} />
+      <span>
+        Diese Datei gehört anscheinend zu einem <strong>anderen PayPal-Konto</strong> als „{info.acc.name}“ (z. B. dem deines Partners).
+        <span className="button-row compact" style={{ marginTop: 8 }}>
+          <button onClick={create}><Icon name="plus" size={16} />Neues PayPal-Konto anlegen</button>
+        </span>
+      </span>
+    </div>
   )
 }
