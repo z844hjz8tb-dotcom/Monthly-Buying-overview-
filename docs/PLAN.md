@@ -214,7 +214,8 @@ Die App erwartet eine JSON-Datei in diesem Format (siehe `src/import/amazon.ts`)
 ### Erster Praxistest (06.11.2026, 26 Bestellungen Aug–Okt)
 - Gesamtsummen stimmen mit den ING-Abbuchungen überein (auch bei Abbuchung in mehreren Teilen).
 - Mengen > 1 wurden nicht gelesen → Skript-Version 2: Menge zusätzlich in Markierungen im Artikelblock suchen und aus der **Zwischensumme** ableiten; Prüfbericht bei Abweichung.
-- Bei zwei Bestellungen fehlen 5,99 € bzw. 6,99 € zu den Artikeln (Artikel nicht gelesen oder Versand) – offen, Detailseiten vom Nutzer angefragt.
+- Zweiter Lauf (99 Bestellungen Jan–Okt) geprüft: Mengen stimmen. Summe > Artikel = Versandkosten, Summe < Artikel = Spar-Abo/Coupon/Gutschein, Summe 0 = komplett mit Gutschein bezahlt bzw. Ersatzlieferung – alles plausibel, vom Nutzer bestätigt.
+- „Zwischensumme“ ist auf den meisten Seiten der **Netto**-Betrag → wird dann ignoriert (Steuerzeile oder Artikel = Zwischensumme × 1,19/1,07).
 - „Amazon Monatsabrechnung“ auf der ING (Sammelzahlung ohne Bestellnummer) → Umbuchung, sonst Doppelzählung.
 - Zeitraum „letzte 3 Monate“ lässt Bestellungen am Rand weg → ganzes Jahr wählen.
 
