@@ -99,7 +99,7 @@ export function displayCounterparty(row: BankRow): string {
   return cp || row.bookingText
 }
 
-/** Amazon-Bestellnummer im Verwendungszweck, z. B. "306-7204867-6656317" */
+/** Amazon-Bestellnummer im Verwendungszweck, z. B. "302-1234567-1234567" */
 export function amazonOrderId(row: BankRow): string | undefined {
   if (!/amazon|amzn/i.test(row.counterparty + ' ' + row.purpose)) return undefined
   return row.purpose.match(/\b(\d{3}-\d{7}-\d{7})\b/)?.[1]
