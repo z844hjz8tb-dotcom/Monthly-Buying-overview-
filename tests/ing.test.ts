@@ -1,0 +1,154 @@
+import 'fake-indexeddb/auto'
+import { readFileSync } from 'node:fs'
+import { afterEach, describe, expect, it } from 'vitest'
+import { TrackerDB } from '../src/db/schema'
+import { ensureDefaults } from '../src/finance/defaults'
+import { classify, displayCounterparty, hasPattern } from '../src/finance/classify'
+import { decodeBankFile, parseIngCsv } from '../src/import/ing'
+import { applyIngImport, ownNamesFromCustomer, planIngImport, reclassifyImported, saveOwnNames } from '../src/import/bank'
+import { monthOverview } from '../src/stats/overview'
+
+/** Erfundene Datei im Format des echten ING-Exports (ISO-8859-1, eingeschobene Leerzeichen) */
+const raw = readFileSync(new URL('./fixtures/ing-beispiel.csv', import.meta.url))
+const text = decodeBankFile(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.length))
+
+const dbs: TrackerDB[] = []
+let n = 0
+async function setup() {
+  const db = new TrackerDB(`ing-${n++}`)
+  dbs.push(db)
+  await ensureDefaults(db)
+  await db.accounts.bulkAdd([
+    { id: 'notgroschen', name: 'Notgroschen', kind: 'savings', order: 10 },
+    { id: 'depot', name: 'ING Depot', kind: 'depot', order: 11, countsAsSaving: true },
+    { id: 'lena', name: 'Depot Lena', kind: 'depot', order: 12, countsAsSaving: true, matchNames: ['Lena Muster'] },
+  ])
+  await saveOwnNames(db, ownNamesFromCustomer('Max Muster, Erika Muster'))
+  return db
+}
+afterEach(async () => {
+  for (const db of dbs.splice(0)) await db.delete()
+})
+
+describe('ING-Export lesen', () => {
+  it('liest Kopf und Zeilen inkl. Umlauten aus ISO-8859-1', () => {
+    const ex = parseIngCsv(text)
+    expect(ex.iban).toBe('DE00000000000000000000')
+    expect(ex.customer).toBe('Max Muster, Erika Muster')
+    expect(ex.saldoCents).toBe(1234567)
+    expect(ex.saldoDate).toBe('2026-11-06')
+    expect(ex.rows).toHaveLength(23)
+    expect(ex.rows[10]).toMatchObject({ counterparty: 'Kleingeld Plus - Sparen', bookingText: 'Überweisung', amountCents: -41 })
+    expect(ex.rows[0]).toMatchObject({ date: '2026-11-06', amountCents: 1000000 })
+  })
+
+  it('lehnt andere Dateien ab', () => {
+    expect(() => parseIngCsv('Datum;Betrag\n')).toThrow(/kein ING-Umsatzexport/)
+  })
+
+  it('leitet eigene Namen aus dem Dateikopf ab', () => {
+    expect(ownNamesFromCustomer('Max Muster, Erika Muster')).toEqual(['Max Muster', 'Erika Muster', 'Max und Erika Muster', 'Max Muster und Erika Muster'])
+  })
+})
+
+describe('Einordnung', () => {
+  it('Muster gelten ab Wortanfang und vertragen eingeschobene Leerzeichen', () => {
+    expect(hasPattern('kindergartenver. st. muster', 'garten')).toBe(false)
+    expect(hasPattern('baldur-garten gmbh', 'garten')).toBe(true)
+    expect(hasPattern('mobility hub', 'obi ')).toBe(false)
+    expect(hasPattern('paypal: ope nai ireland', 'openai')).toBe(true)
+    expect(hasPattern('haustierversicherung ag', '*versicherung')).toBe(true)
+  })
+
+  it('macht Händlernamen lesbar', () => {
+    const r = (counterparty: string, purpose = '', bookingText = 'Lastschrift') => ({ date: '', amountCents: -1, counterparty, purpose, bookingText })
+    expect(displayCounterparty(r('VISA LIDL SAGT DANKE'))).toBe('LIDL SAGT DANKE')
+    expect(displayCounterparty(r('PayPal Europe', '1/PP.1.PP/. Apple Services, Ihr Einkauf bei Apple Servi ces'))).toBe('PayPal: Apple Services')
+    expect(displayCounterparty(r('', 'WP-ABRECHNUNG 1 Kauf ISIN DE0005933931 ISHS CORE DAX UC.ET', 'Wertpapierkauf'))).toBe('Wertpapierkauf: ISHS CORE DAX UC.ET')
+  })
+
+  it('ordnet jede Zeile der Beispieldatei richtig ein', async () => {
+    const db = await setup()
+    const plan = await planIngImport(db, parseIngCsv(text), 'ing')
+    const got = plan.map((p) => [p.tx.counterparty, p.tx.kind, p.tx.categoryId ?? p.tx.transferAccountId ?? null])
+    expect(got).toEqual([
+      ['Darlehensauszahlung', 'transfer', null],
+      ['LIDL SAGT DANKE', 'expense', 'lebensmittel'],
+      ['PayPal: Netflix.com', 'expense', 'abos'],
+      ['PayPal: Apple Services', 'expense', 'abos'],
+      ['AMAZON PAYMENTS EUROPE S.C.A.', 'expense', 'online'],
+      ['AMAZON PAYMENTS EUROPE S.C.A.', 'expense', 'online'], // Erstattung (positiv)
+      ['AMAZON DIGITAL GERMANY GMBH', 'expense', 'abos'],
+      ['Max Muster', 'transfer', null],
+      ['IHRE VOLKSBANK', 'transfer', 'bar'],
+      ['Bargeldauszahlung VISA Card MUSTERBANK EG', 'transfer', 'bar'],
+      ['Kleingeld Plus - Sparen', 'transfer', null],
+      ['Notgroschen', 'transfer', 'notgroschen'],
+      ['Lena Muster', 'saving', 'lena'],
+      ['Erika Muster und Max Muster', 'expense', 'kredite'],
+      ['Bausparkasse Muster AG', 'expense', 'kredite'],
+      ['ING', 'expense', null],
+      ['GC RE OCTOPUS ENERGY GERMANY GMBH', 'expense', 'wohnen'],
+      ['Musterfirma GmbH', 'income', null],
+      ['AMERICAN EXPRESS EUROPE S.A. (Germany branch)', 'transfer', 'amex'],
+      ['Wertpapierkauf: ISHS CORE DAX UC.ET', 'saving', 'depot'],
+      ['Bundesagentur fur Arbeit - Familienkasse', 'income', null],
+      ['Kindergartenver. St. Muster e.V.', 'expense', null],
+      ['Abschluss', 'expense', null],
+    ])
+    expect(plan[4].tx.linkedOrderId).toBe('306-1234567-7654321')
+    expect(plan[5].tx.linkedOrderId).toBe('304-7654321-1234567')
+  })
+})
+
+describe('Import', () => {
+  it('importiert, erkennt Duplikate, setzt IBAN und Kontostand', async () => {
+    const db = await setup()
+    const ex = parseIngCsv(text)
+    const first = await applyIngImport(db, ex, 'ing', await planIngImport(db, ex, 'ing'))
+    expect(first).toEqual({ added: 23, skipped: 0 })
+    const again = await planIngImport(db, ex, 'ing')
+    expect(again.every((p) => p.duplicate)).toBe(true)
+    expect(await applyIngImport(db, ex, 'ing', again)).toEqual({ added: 0, skipped: 23 })
+    const acc = await db.accounts.get('ing')
+    expect(acc).toMatchObject({ iban: 'DE00000000000000000000', balanceCents: 1234567, balanceDate: '2026-11-06' })
+  })
+
+  it('zählt in der Übersicht nur echte Ausgaben; Sparen getrennt; Amazon-Bestellung nicht doppelt', async () => {
+    const db = await setup()
+    const ex = parseIngCsv(text)
+    await applyIngImport(db, ex, 'ing', await planIngImport(db, ex, 'ing'))
+    const o = monthOverview('2026-11', {
+      transactions: await db.transactions.toArray(),
+      orders: [{ orderId: '306-1234567-7654321', date: '2026-11-04', totalCents: 1999, source: 'amazon', importedAt: '', updatedAt: '' }],
+      receipts: [],
+      accounts: await db.accounts.toArray(),
+    })
+    // Ausgaben Nov: Lidl 11,82 + Netflix 9,99 + Apple 2,99 + Amazon 19,99 − Erstattung 8,99 + Prime 9,99
+    //               + Darlehensrate 1000 + Bausparkasse 116,67 + Entgelt 1,49 + Octopus 55
+    expect(o.expenseCents).toBe(1182 + 999 + 299 + 1999 - 899 + 999 + 100000 + 11667 + 149 + 5500)
+    expect(o.savingCents).toBe(7500) // Sparplan Lena (Wertpapierkauf war im Oktober)
+    expect(o.incomeCents).toBe(0) // Darlehensauszahlung und eigene Gutschrift sind keine Einnahmen
+    expect(o.bySource.amazon).toBeUndefined() // Bestellung über die ING-Buchung gezählt
+  })
+
+  it('ordnet nach gelernten Regeln neu ein, ohne von Hand geänderte Buchungen anzufassen', async () => {
+    const db = await setup()
+    const ex = parseIngCsv(text)
+    await applyIngImport(db, ex, 'ing', await planIngImport(db, ex, 'ing'))
+    const all = await db.transactions.toArray()
+    const k = all.find((t) => t.counterparty.startsWith('Kindergarten'))!
+    const kleingeld = all.find((t) => t.counterparty.startsWith('Kleingeld'))!
+    await db.transactions.update(kleingeld.id!, { edited: true, kind: 'expense', categoryId: 'sonstiges' })
+    await db.categoryRules.add({ pattern: 'Kindergartenver', field: 'counterparty', categoryId: 'freizeit' })
+    await db.accounts.update('notgroschen', { matchNames: ['Kleingeld Plus'] })
+    expect(await reclassifyImported(db)).toBeGreaterThan(0)
+    expect((await db.transactions.get(k.id!))?.categoryId).toBe('freizeit')
+    expect((await db.transactions.get(kleingeld.id!))?.kind).toBe('expense') // von Hand geändert → bleibt
+  })
+})
+
+it('erkennt eigenes Konto auch nach dem Neu-Einordnen über "Erkennen an"', () => {
+  const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }, { id: 'x', name: 'Extra', kind: 'savings' as const, order: 2, matchNames: ['Kleingeld Plus'] }] }
+  expect(classify({ date: '', amountCents: -41, counterparty: 'Kleingeld Plus - Sparen', bookingText: 'Überweisung', purpose: '' }, ctx)).toMatchObject({ kind: 'transfer', transferAccountId: 'x' })
+})

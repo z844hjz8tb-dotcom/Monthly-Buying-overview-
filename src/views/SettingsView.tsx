@@ -135,8 +135,11 @@ export function SettingsView() {
             </Link>
           </li>
           <li>
-            <span className="avatar" aria-hidden="true"><Icon name="wallet" /></span>
-            <div className="row-main"><span className="row-title">ING, Amex, PayPal</span><span className="row-sub muted">kommt in den nächsten Schritten</span></div>
+            <Link to="/import/bank" className="row-link">
+              <span className="avatar" aria-hidden="true"><Icon name="wallet" /></span>
+              <div className="row-main"><span className="row-title">Bank-Umsätze</span><span className="row-sub muted">ING-CSV · Amex und PayPal folgen</span></div>
+              <Icon name="right" size={18} className="chevron" />
+            </Link>
           </li>
         </ul>
       </section>
