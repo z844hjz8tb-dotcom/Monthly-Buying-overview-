@@ -14,7 +14,7 @@ import type { BankExport } from './bank'
  */
 
 /** CSV in Datensätze zerlegen; Felder in Anführungszeichen dürfen Trennzeichen und Zeilenumbrüche enthalten. */
-function parseCsv(text: string, sep: string): string[][] {
+export function parseCsv(text: string, sep: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let cur = ''

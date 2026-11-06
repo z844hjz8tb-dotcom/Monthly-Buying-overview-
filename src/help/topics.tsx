@@ -90,6 +90,25 @@ export const HELP_TOPICS: HelpTopic[] = [
     ),
   },
   {
+    id: 'paypal',
+    title: 'PayPal importieren',
+    icon: 'card',
+    body: (
+      <>
+        <p><strong>Export (am PC):</strong> paypal.com → einloggen → <strong>Aktivitäten</strong> → „Kontoauszüge“ bzw. „Aktivitäten herunterladen“ → Zeitraum wählen → Format <strong>CSV</strong>, „Alle Transaktionen“.</p>
+        <p><strong>Import:</strong> wie bei der ING (Konten → „Umsätze importieren“). Die App erkennt die PayPal-Datei selbst und wählt das Konto „PayPal“.</p>
+        <ul>
+          <li>Gezählt wird die <strong>PayPal-Zahlung</strong> mit dem echten Händler (Netflix, eBay, …) und passender Kategorie.</li>
+          <li>Die zugehörige Abbuchung „PayPal Europe“ auf dem Girokonto bzw. „PAYPAL *…“ auf der Karte wird automatisch erkannt (gleicher Betrag, bis 7 Tage später) und zählt <strong>nicht noch einmal</strong>. Ohne PayPal-Import zählt weiter die Abbuchung.</li>
+          <li><strong>Später bezahlen / Ratenzahlung:</strong> Der Einkauf zählt am Kauftag. Die spätere Rückzahlung an „PayPal (Europe)“ ist eine Umbuchung.</li>
+          <li>Geld von Freunden (Handyzahlung) ist eine Einnahme; „Abbuchung“ aufs Girokonto ist eine Umbuchung.</li>
+          <li>Zahlungen an Privatpersonen haben keine Kategorie – einmal zuordnen und „Für alle … merken“.</li>
+          <li>Amazon-Bestellungen über PayPal werden an der Bestellnummer erkannt und nicht doppelt gezählt.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     id: 'amazon',
     title: 'Amazon-Bestellungen holen',
     icon: 'package',

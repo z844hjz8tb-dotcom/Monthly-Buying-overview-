@@ -44,7 +44,7 @@ export interface BankExport {
   saldoDate?: string
   /** Vorschlag, auf welches Konto importiert wird (z. B. "amex"), falls die IBAN nicht passt */
   defaultAccountId: string
-  rows: (BankRow & { importKey: string; valueDate?: string })[]
+  rows: (BankRow & { importKey: string; valueDate?: string; funding?: Transaction['funding'] })[]
 }
 
 export function ingToBankExport(ex: IngExport): BankExport {
@@ -62,7 +62,7 @@ export function ingToBankExport(ex: IngExport): BankExport {
 }
 
 export interface PlannedRow {
-  row: BankRow & { valueDate?: string }
+  row: BankRow & { valueDate?: string; funding?: Transaction['funding'] }
   importKey: string
   duplicate: boolean
   tx: Omit<Transaction, 'id' | 'createdAt'>
@@ -91,6 +91,7 @@ export async function planBankImport(db: TrackerDB, ex: BankExport, accountId: s
         categoryId: c.categoryId,
         transferAccountId: c.transferAccountId,
         linkedOrderId: c.linkedOrderId,
+        funding: row.funding,
         source: ex.source,
         importKey: row.importKey,
       },

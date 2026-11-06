@@ -36,7 +36,7 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 5
+export const RULES_VERSION = 6
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
@@ -166,6 +166,15 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   const isCard = row.bookingText === 'Kreditkarte'
   if (isCard && /zahlung.{0,15}erhalten|payment received|lastschrift erhalten/.test(text)) {
     return move(ctx.accounts.find((a) => a.id === 'ing' && !a.hidden) ?? ctx.accounts.find((a) => a.kind === 'giro' && !a.demo && !a.hidden))
+  }
+
+  // PayPal-Konto: Auszahlung aufs Girokonto = Umbuchung; Rückzahlung an PayPal ("Später bezahlen", Ratenzahlung)
+  // = Umbuchung, denn der Einkauf selbst zählt schon beim Kauf (Zeile "Zahlung per PayPal-Käuferkredit")
+  if ('kind' in self && self.kind === 'paypal') {
+    if (/abbuchung|auszahlung/i.test(row.bookingText) && row.amountCents < 0) {
+      return move(ctx.accounts.find((a) => a.id === 'ing' && !a.hidden) ?? ctx.accounts.find((a) => a.kind === 'giro' && !a.demo && !a.hidden))
+    }
+    if (/paypal\s*\(?europe/i.test(row.counterparty) && row.amountCents < 0) return { kind: 'transfer', counterparty: 'PayPal-Rückzahlung (Später bezahlen)' }
   }
 
   // Amazon-Monatsabrechnung: Sammelzahlung für Bestellungen, die einzeln aus dem Amazon-Import zählen

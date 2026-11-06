@@ -131,6 +131,8 @@ export interface Transaction {
   linkedReceiptId?: number
   /** Diese Buchung ist nur die Abbuchung einer anderen (z. B. PayPal) und zählt nicht selbst */
   viaTransactionId?: number
+  /** PayPal: womit PayPal die Zahlung finanziert hat (Bankkonto, Karte, PayPal-Kredit, Guthaben) – zum Verknüpfen der Abbuchung */
+  funding?: { via: 'bank' | 'card' | 'credit'; cents: number }[]
   /** Bei Umbuchung/Sparen: das andere Konto und die Gegenbuchung dort */
   transferAccountId?: string
   pairId?: number
