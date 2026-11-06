@@ -27,10 +27,14 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 - **Hilfe in der App** (`/hilfe`, `src/help/topics.tsx`): Anleitungen zu Monatsroutine, ING, Amex, Amazon-Skript, Bons, Konten, Kategorien, was zählt, Backup, FAQ; ?-Knopf oben öffnet das passende Thema. Bei geänderten Abläufen mitpflegen.
 - Haushaltsbuch H5 (Bons ↔ Kartenzahlung, `src/finance/links.ts`): automatisch bei eindeutigem Laden + Betrag + Kaufdatum (±1 Tag, Kaufdatum aus „KAUFUMSATZ TT.MM“/ISO-Zeitstempel); unsichere Fälle (Coupon bis 2 €, Laden nicht erkennbar) als Vorschlag im Bons-Tab; „Bar bezahlt“ im Bon; läuft nach Bank-Import, nach Bon-Speichern und beim Start. Mit echtem Lidl-Bon + ING-Export lokal geprüft.
 
+- Amazon-Rücksendungen: Gutschriften mit Bestellnummer werden unter Amazon bei der Bestellung abgezogen; Artikel, deren Preise genau die Erstattung ergeben, als „zurückgeschickt“ markiert; nur Zahlungen (nicht Erstattungen) mit Bestellnummer verdrängen die Bestellung in der Übersicht.
+
+- Haushaltsbuch H4 (PayPal-Import, `src/import/paypal.ts`, `src/finance/paypal.ts`): Aktivitäts-CSV; Finanzierungszeilen („Bankgutschrift auf PayPal-Konto“, „Käuferkredit“, „Gutschrift auf Kreditkarte“) hängen über den zugehörigen Transaktionscode an der Zahlung (`funding`). Gezählt wird die PayPal-Zahlung (Netto inkl. Gebühr) mit Händler/Kategorie; die Abbuchung auf ING/Amex wird verknüpft (gleicher Betrag, 0–7 Tage später, Händlername im Verwendungszweck hat Vorrang) und zählt nicht (`viaTransactionId`). Rückzahlung an „PayPal (Europe)“ = Umbuchung (Einkauf zählt am Kauftag), „Abbuchung“ = Umbuchung aufs Girokonto, Handyzahlung von Freunden = Einnahme. Nur EUR. Mit den echten Dateien des Nutzers lokal geprüft (nicht im Repo): alle Abbuchungen im Überschneidungszeitraum verknüpft.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. **H4 PayPal-Import** – wartet auf eine Beispiel-Exportdatei (nur am PC). Danach PayPal-Abbuchungen auf ING/Amex mit den PayPal-Zahlungen verknüpfen.
+1. Rückmeldung zu PayPal abwarten: regelmäßige gleich hohe Rückzahlung an PayPal (Ratenzahlung für einen Kauf vor dem Exportzeitraum) als Rate zählen? Gibt es ein zweites PayPal-Konto (zweite PayPal-Kennung auf dem Girokonto)?
    Bausparkasse geklärt (06.11.2026): zwei Vorausdarlehen – „Zins“-Lastschrift = Kredite, „U.A.“ (Ansparung in den Bausparvertrag) = Gespart; optional Konto „Bausparvertrag“ (Tagesgeld, zählt als Sparen) als Ziel.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Skript am PC ausprobieren** – fertig (Amazon → „Amazon-Datei importieren“ → Schritt 1: Skript kopieren). Detailseite an echter Seite geprüft; das Laden der Übersichtsseiten (Amazon entschlüsselt sie erst im Browser, Skript lädt weitere Seiten in einem unsichtbaren Rahmen) kann nur der Nutzer testen → Rückmeldung abwarten.
@@ -119,7 +123,7 @@ Bankdaten sind sensibler als Bons: Backup optional mit Passwort verschlüsseln (
 | H1b | Konten verwalten, Umbuchungen von/nach, Sparen getrennt („Gespart“), manueller Stand | ✅ |
 | H2 | ING-CSV-Import: Einordnung (Kredite, Wertpapierkauf=Sparen, eigene Konten über „Erkennen an“, eigene Namen, Amex-Abrechnung, Bargeld, Gehalt, Erstattungen), Duplikate über Datum+Betrag+Saldo, Lernen per „merken“, Amazon-Bestellnummer verknüpft | ✅ |
 | H3 | Amex-CSV-Import (Datum TT/MM/JJJJ, positiv = Belastung, Händler = erste 23 Zeichen); Ausgleich „Zahlung erhalten“ = Umbuchung vom Girokonto; Gutschriften = Erstattung; Duplikate über Datum+Betrag+Text+laufende Nummer | ✅ |
-| H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ⏳ |
+| H4 | PayPal-CSV-Import; Verknüpfung mit ING/Amex | ✅ |
 | H5 | Verknüpfung Amazon-Bestellungen (Bestellnummer) und Bons (Laden/Betrag/Datum) mit Buchungen | ✅ |
 | H6 | Fixkosten & Kredite (Erkennung + manuell), Vorschau | ⏳ |
 | H7 | Verschlüsseltes Backup | ⏳ |
