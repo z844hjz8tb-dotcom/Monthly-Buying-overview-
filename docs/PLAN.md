@@ -2,7 +2,7 @@
 
 Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (Phase 1), danach Kassenbons aus Lebensmittel- und Drogerieeinkäufen (Phase 2).
 
-## Aktueller Stand (05.11.2026)
+## Aktueller Stand (06.11.2026)
 
 **Live:** https://z844hjz8tb-dotcom.github.io/Monthly-Buying-overview-/ (Deploy bei jedem Push auf `main`)
 
@@ -31,10 +31,15 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Haushaltsbuch H4 (PayPal-Import, `src/import/paypal.ts`, `src/finance/paypal.ts`): Aktivitäts-CSV; Finanzierungszeilen („Bankgutschrift auf PayPal-Konto“, „Käuferkredit“, „Gutschrift auf Kreditkarte“) hängen über den zugehörigen Transaktionscode an der Zahlung (`funding`). Gezählt wird die PayPal-Zahlung (Netto inkl. Gebühr) mit Händler/Kategorie; die Abbuchung auf ING/Amex wird verknüpft (gleicher Betrag, 0–7 Tage später, Händlername im Verwendungszweck hat Vorrang) und zählt nicht (`viaTransactionId`). Rückzahlung an „PayPal (Europe)“ = Umbuchung (Einkauf zählt am Kauftag), „Abbuchung“ = Umbuchung aufs Girokonto, Handyzahlung von Freunden = Einnahme. Nur EUR. Mit den echten Dateien des Nutzers lokal geprüft (nicht im Repo): alle Abbuchungen im Überschneidungszeitraum verknüpft.
 
+- „Was wurde gekauft?“ (`src/finance/purchases.ts`): Buchungsdetail zeigt oben die Artikel der verknüpften Amazon-Bestellung bzw. des Bons – bei Abbuchungen einer PayPal-Zahlung über die PayPal-Buchung; Kontoliste zeigt den ersten Artikel. Amazon-Zahlungen ohne Bestellnummer (z. B. Kreditkarte) werden bei eindeutigem Betrag + Datum (0–10 Tage nach Bestellung) verknüpft.
+- Fixes 06.11.: Amex-Leser robuster (mehr Spalten, Zeilenumbrüche in Feldern, Semikolon, Excel-Hinweis); Amazon-Skript v2 (Mengen, Prüfbericht, Netto-Zwischensumme ignoriert, Version in der Konsole); „Amazon Monatsabrech nung“ (vom ING-Export umgebrochen, auch über einen Zahlungsdienst) = Umbuchung – zählte vorher doppelt (RULES_VERSION 7).
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
-1. PayPal geklärt: Ratenzahlung zählt als monatliche Rate (Kredite); Rückzahlung ohne passenden Einkauf und ohne monatliche Wiederholung = Einkauf vor dem Export (Ausgabe ohne Kategorie). Die Ehefrau hat ein eigenes PayPal-Konto → zweites PayPal-Konto, erkannt an der Konto-ID im Dateinamen; Export von ihr steht noch aus.
+1. Vom Nutzer: PayPal-Export der Ehefrau (eigenes PayPal-Konto → in der Import-Vorschau „Neues PayPal-Konto anlegen“), eigener PayPal-Export ab Oktober; eigene PayPal-Datei einmal neu importieren (setzt die Konto-ID). Danach Rückmeldung, ob alles stimmt.
+   Zahlungen an einen Friseur laufen über PayPal (Name steht nur im Export) → Nutzer ordnet sie in der App einmal zu und tippt „Für alle … merken“; die Regel bleibt auf dem Gerät. Händlernamen aus den Exporten **nicht** als eingebaute Regel ins öffentliche Repo.
+   PayPal geklärt: Ratenzahlung zählt als monatliche Rate (Kredite); Rückzahlung ohne passenden Einkauf und ohne monatliche Wiederholung = Einkauf vor dem Export (Ausgabe ohne Kategorie). Die Ehefrau hat ein eigenes PayPal-Konto → zweites PayPal-Konto, erkannt an der Konto-ID im Dateinamen; Export von ihr steht noch aus.
    Bausparkasse geklärt (06.11.2026): zwei Vorausdarlehen – „Zins“-Lastschrift = Kredite, „U.A.“ (Ansparung in den Bausparvertrag) = Gespart; optional Konto „Bausparvertrag“ (Tagesgeld, zählt als Sparen) als Ziel.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Skript am PC ausprobieren** – fertig (Amazon → „Amazon-Datei importieren“ → Schritt 1: Skript kopieren). Detailseite an echter Seite geprüft; das Laden der Übersichtsseiten (Amazon entschlüsselt sie erst im Browser, Skript lädt weitere Seiten in einem unsichtbaren Rahmen) kann nur der Nutzer testen → Rückmeldung abwarten.
