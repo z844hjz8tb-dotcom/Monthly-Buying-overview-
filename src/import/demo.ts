@@ -93,6 +93,15 @@ export function buildDemoTransactions(year = 2026): Omit<Transaction, 'id' | 'cr
   ]
 }
 
+/** Erfundene Rücksendung: der erste Artikel einer Oktober-Bestellung mit mehreren Artikeln wird aufs Girokonto erstattet. */
+export function buildDemoRefund(exp: AmazonExport): Omit<Transaction, 'id' | 'createdAt'> | undefined {
+  const o = exp.orders.find((x) => x.date.slice(5, 7) === '10' && x.status === 'ok' && x.items.length > 1)
+  const it = o?.items[0]
+  if (!o || !it?.unitPriceCents) return undefined
+  const date = `${o.date.slice(0, 8)}${String(Math.min(28, Number(o.date.slice(8)) + 1)).padStart(2, '0')}`
+  return { accountId: 'ing', date, amountCents: it.unitPriceCents, counterparty: 'Amazon Erstattung', kind: 'expense', categoryId: 'online', linkedOrderId: o.orderId, source: 'manual', demo: true }
+}
+
 /** Erfundene Spar- und Depotkonten (werden mit den Beispieldaten angelegt und wieder entfernt). */
 export const DEMO_ACCOUNTS = [
   { id: 'demo-extra', name: 'Extra-Konto (Beispiel)', kind: 'savings' as const, order: 90, demo: true },

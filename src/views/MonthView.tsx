@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
-import { countsAsSpending, formatDay, formatMonth, itemRows, shiftMonth, type ItemRow } from '../stats/spending'
+import { countsAsSpending, formatDay, formatMonth, isFullyRefunded, itemRows, netOrderCents, refundsByOrder, shiftMonth, type ItemRow } from '../stats/spending'
 
 type Sort = 'date' | 'price'
 
@@ -12,8 +12,13 @@ const STATUS_LABEL = { cancelled: 'storniert', returned: 'zurückgesendet' } as 
 
 async function loadMonth(key: string) {
   const orders = await db.orders.where('date').startsWith(key).toArray()
-  const items = await db.orderItems.where('orderId').anyOf(orders.map((o) => o.orderId)).toArray()
-  return { orders, items }
+  const ids = orders.map((o) => o.orderId)
+  const [items, txs] = await Promise.all([
+    db.orderItems.where('orderId').anyOf(ids).toArray(),
+    db.transactions.where('linkedOrderId').anyOf(ids).toArray(),
+  ])
+  const refunds = refundsByOrder(txs)
+  return { orders, items, refunds, total: orders.filter((o) => countsAsSpending(o)).reduce((s, o) => s + netOrderCents(o, refunds), 0) }
 }
 
 export function MonthView() {
@@ -24,7 +29,7 @@ export function MonthView() {
   const data = useLiveQuery(async () => {
     if (!valid) return null
     const [cur, prev] = await Promise.all([loadMonth(key), loadMonth(prevKey)])
-    return { ...cur, prevTotal: prev.orders.filter(countsAsSpending).reduce((s, o) => s + o.totalCents, 0) }
+    return { ...cur, prevTotal: prev.total }
   }, [key])
 
   const [query, setQuery] = useState('')
@@ -33,7 +38,7 @@ export function MonthView() {
   const rows = useMemo(() => {
     if (!data) return []
     const q = query.trim().toLowerCase()
-    const all = itemRows(data.orders, data.items).filter((r) => !q || r.title.toLowerCase().includes(q))
+    const all = itemRows(data.orders, data.items, data.refunds).filter((r) => !q || r.title.toLowerCase().includes(q))
     return all.sort((a, b) =>
       sort === 'price'
         ? (b.lineCents ?? -1) - (a.lineCents ?? -1)
@@ -44,9 +49,17 @@ export function MonthView() {
   if (!valid) return <Navigate to="/uebersicht" replace />
   if (!data) return null
 
-  const spending = data.orders.filter(countsAsSpending)
-  const total = spending.reduce((s, o) => s + o.totalCents, 0)
+  const spending = data.orders.filter((o) => countsAsSpending(o) && !isFullyRefunded(o, data.refunds))
+  const total = data.total
   const delta = total - data.prevTotal
+  const refunded = data.orders.filter(countsAsSpending).reduce((s, o) => s + Math.min(o.totalCents, data.refunds.get(o.orderId) ?? 0), 0)
+  // Erstattungen, die sich keinem Artikel genau zuordnen lassen (z. B. Teilerstattung)
+  const openRefunds = data.orders.filter((o) => {
+    const r = data.refunds.get(o.orderId)
+    if (!r || !countsAsSpending(o) || isFullyRefunded(o, data.refunds)) return false
+    const own = itemRows([o], data.items, data.refunds)
+    return !own.some((i) => i.returnedQty > 0)
+  })
 
   return (
     <>
@@ -60,6 +73,7 @@ export function MonthView() {
         <p className="hero-number">{formatCents(total)}</p>
         <p className="hero-sub">
           <span className="pill">{spending.length} Bestellungen</span>
+          {refunded > 0 && <span className="pill">{formatCents(refunded)} erstattet</span>}
           {data.prevTotal > 0 && (
             <span className="pill">
               <Icon name={delta > 0 ? 'up' : 'down'} size={14} />
@@ -92,13 +106,26 @@ export function MonthView() {
         ) : (
           <ul className="rows">{rows.map((r) => <ItemLine key={r.id} row={r} />)}</ul>
         )}
+        {openRefunds.length > 0 && !query && (
+          <ul className="rows">
+            {openRefunds.map((o) => (
+              <li key={o.orderId}>
+                <div className="row-main">
+                  <span className="row-title">Erstattung zur Bestellung vom {formatDay(o.date)}</span>
+                  <span className="row-sub muted">Keinem Artikel genau zuzuordnen (z. B. Teilerstattung)</span>
+                </div>
+                <span className="row-amount">−{formatCents(data.refunds.get(o.orderId)!)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   )
 }
 
 function ItemLine({ row }: { row: ItemRow }) {
-  const inactive = row.status === 'cancelled' || row.status === 'returned'
+  const inactive = row.status === 'cancelled' || row.status === 'returned' || row.returnedQty >= row.quantity
   return (
     <li className={inactive ? 'inactive' : ''}>
       <div className="row-main">
@@ -106,7 +133,9 @@ function ItemLine({ row }: { row: ItemRow }) {
         <span className="row-sub muted">
           {formatDay(row.date)}
           {row.quantity > 1 && ` · ${row.quantity} × ${row.unitPriceCents !== null ? formatCents(row.unitPriceCents) : '–'}`}
-          {inactive && <span className="badge">{STATUS_LABEL[row.status as keyof typeof STATUS_LABEL]}</span>}
+          {row.status === 'cancelled' || row.status === 'returned'
+            ? <span className="badge">{STATUS_LABEL[row.status]}</span>
+            : row.returnedQty > 0 && <span className="badge">{row.returnedQty < row.quantity ? `${row.returnedQty} × ` : ''}zurückgeschickt</span>}
         </span>
       </div>
       <span className="row-amount">{row.lineCents !== null ? formatCents(row.lineCents) : '–'}</span>
