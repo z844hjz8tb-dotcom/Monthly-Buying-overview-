@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/schema'
+import { db, type Account } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
 import { formatDay } from '../stats/spending'
@@ -55,7 +55,9 @@ export function BankImportView() {
       const byIban = ex.iban ? accounts.find((a) => a.iban === ex.iban) : undefined
       // PayPal: ohne bekannte Konto-ID ein PayPal-Konto nehmen, das noch keiner Datei zugeordnet ist
       const freePaypal = ex.source === 'paypal' && ex.iban ? accounts.find((a) => a.kind === 'paypal' && !a.iban && !a.hidden && !a.demo) : undefined
-      const accountId = byIban?.id ?? freePaypal?.id ?? (accounts.some((a) => a.id === ex.defaultAccountId) ? ex.defaultAccountId : 'ing')
+      // ohne IBAN-Treffer: ein Konto ohne IBAN mit dem Kontonamen aus der Datei (z. B. von Hand angelegtes "Extra-Konto")
+      const byName = ex.accountName ? accounts.find((a) => !a.iban && !a.demo && a.name.trim().toLowerCase() === ex.accountName!.trim().toLowerCase()) : undefined
+      const accountId = byIban?.id ?? byName?.id ?? freePaypal?.id ?? (accounts.some((a) => a.id === ex.defaultAccountId) ? ex.defaultAccountId : 'ing')
       setState({ step: 'preview', fileName: file.name, ex, accountId, plan: await planBankImport(db, ex, accountId) })
     } catch (e) {
       setState({ step: 'error', message: e instanceof Error ? e.message : String(e) })
@@ -149,9 +151,7 @@ export function BankImportView() {
                 </button>
               ))}
             </div>
-            {state.ex.source === 'paypal' && (
-              <PaypalAccountHint ex={state.ex} accountId={state.accountId} plan={state.plan} onCreate={changeAccount} />
-            )}
+            <OtherAccountHint ex={state.ex} accountId={state.accountId} plan={state.plan} onCreate={changeAccount} />
           </section>
 
           <section className="card">
@@ -251,28 +251,41 @@ export function BankImportView() {
   )
 }
 
+/** Art eines neu anzulegenden Kontos aus dem Export (ING liefert den Kontonamen im Dateikopf) */
+function guessAccountKind(ex: Pick<BankExport, 'source' | 'accountName'>): Account['kind'] {
+  if (ex.source === 'paypal') return 'paypal'
+  if (ex.source === 'amex') return 'credit'
+  const n = (ex.accountName ?? '').toLowerCase()
+  if (/depot/.test(n)) return 'depot'
+  if (/extra|tagesgeld|spar|direkt|festgeld/.test(n)) return 'savings'
+  return 'giro'
+}
+
 /**
- * Mehrere PayPal-Konten (z. B. Partner): warnt, wenn die Datei offenbar zu einem anderen PayPal-Konto gehört,
- * und legt auf Wunsch ein neues an.
+ * Mehrere Konten derselben Bank (ING Girokonto + Extra-Konten, zwei PayPal-Konten …): warnt, wenn die Datei
+ * offenbar zu einem anderen Konto gehört (andere IBAN bzw. PayPal-Konto-ID, oder Zeitraum schon vorhanden ohne
+ * eine einzige gleiche Buchung) und legt auf Wunsch ein neues Konto an.
  */
-function PaypalAccountHint({ ex, accountId, plan, onCreate }: { ex: BankExport; accountId: string; plan: PlannedRow[]; onCreate: (id: string) => void }) {
+function OtherAccountHint({ ex, accountId, plan, onCreate }: { ex: BankExport; accountId: string; plan: PlannedRow[]; onCreate: (id: string) => void }) {
   const info = useLiveQuery(async () => {
     const acc = await db.accounts.get(accountId)
     const dates = ex.rows.map((r) => r.date).sort()
     const overlap = dates.length
-      ? await db.transactions.where('accountId').equals(accountId).filter((t) => t.source === 'paypal' && t.date >= dates[0] && t.date <= dates[dates.length - 1]).count()
+      ? await db.transactions.where('accountId').equals(accountId).filter((t) => t.source === ex.source && t.date >= dates[0] && t.date <= dates[dates.length - 1]).count()
       : 0
     return { acc, overlap }
   }, [accountId, ex])
   if (!info?.acc) return null
-  const otherId = !!ex.iban && !!info.acc.iban && info.acc.iban !== ex.iban
-  const noDuplicates = info.overlap > 0 && plan.every((p) => !p.duplicate)
+  const otherId = !!ex.iban && !!info.acc.iban && info.acc.iban.replace(/\s/g, '') !== ex.iban.replace(/\s/g, '')
+  const noDuplicates = info.overlap > 0 && plan.length > 0 && plan.every((p) => !p.duplicate)
   if (!otherId && !noDuplicates) return null
+  const kind = guessAccountKind(ex)
 
   async function create() {
     const id = `k-${Date.now().toString(36)}`
-    const n = await db.accounts.filter((a) => a.kind === 'paypal').count()
-    await db.accounts.add({ id, name: `PayPal ${n + 1}`, kind: 'paypal', iban: ex.iban, order: 100 + (await db.accounts.count()) })
+    const same = await db.accounts.filter((a) => a.kind === kind).count()
+    const name = ex.accountName?.trim() || (kind === 'paypal' ? `PayPal ${same + 1}` : `Konto ${same + 1}`)
+    await db.accounts.add({ id, name, kind, iban: ex.iban, order: 100 + (await db.accounts.count()), ...(kind === 'depot' ? { countsAsSaving: true } : {}) })
     onCreate(id)
   }
 
@@ -280,9 +293,9 @@ function PaypalAccountHint({ ex, accountId, plan, onCreate }: { ex: BankExport; 
     <div className="status-box warn" style={{ marginTop: 10 }}>
       <Icon name="alert" size={18} />
       <span>
-        Diese Datei gehört anscheinend zu einem <strong>anderen PayPal-Konto</strong> als „{info.acc.name}“ (z. B. dem deines Partners).
+        Diese Datei gehört anscheinend zu einem <strong>anderen Konto</strong> als „{info.acc.name}“{ex.accountName ? ` (laut Datei: ${ex.accountName})` : ''}. Bitte das richtige Konto wählen oder neu anlegen.
         <span className="button-row compact" style={{ marginTop: 8 }}>
-          <button onClick={create}><Icon name="plus" size={16} />Neues PayPal-Konto anlegen</button>
+          <button onClick={create}><Icon name="plus" size={16} />Neues Konto „{ex.accountName?.trim() || (kind === 'paypal' ? 'PayPal' : 'Konto')}“ anlegen</button>
         </span>
       </span>
     </div>
