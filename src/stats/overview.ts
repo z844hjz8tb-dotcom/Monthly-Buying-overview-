@@ -26,6 +26,17 @@ export interface CategoryTotal {
   count: number
 }
 
+/** Eine gezählte Ausgabe (für die Liste je Kategorie) */
+export interface OverviewEntry {
+  categoryId: string
+  cents: number
+  /** Konto-ID, "amazon" oder "bons" */
+  source: string
+  date: string
+  title: string
+  ref: { type: 'tx'; id: number } | { type: 'order'; id: string } | { type: 'receipt'; id: number }
+}
+
 export interface MonthOverview {
   key: string
   expenseCents: number
@@ -36,6 +47,8 @@ export interface MonthOverview {
   /** Gespart (getrennt von den Ausgaben) und wohin, z. B. { depot: 20000 } */
   savingCents: number
   savingByAccount: Record<string, number>
+  /** alle gezählten Ausgaben einzeln, neueste zuerst */
+  entries: OverviewEntry[]
 }
 
 export function receiptCategory(store: string): string {
@@ -51,7 +64,9 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
   let expense = 0
   let income = 0
 
-  const add = (categoryId: string, cents: number, source: string) => {
+  const entries: OverviewEntry[] = []
+  const add = (categoryId: string, cents: number, source: string, e: Pick<OverviewEntry, 'date' | 'title' | 'ref'>) => {
+    entries.push({ categoryId, cents, source, ...e })
     const c = cats.get(categoryId) ?? { categoryId, cents: 0, count: 0 }
     c.cents += cents
     c.count++
@@ -82,15 +97,15 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
       continue
     }
     // Ausgaben sind negativ gespeichert; eine positive "Ausgabe" ist eine Erstattung und mindert die Kategorie
-    add(t.categoryId ?? FALLBACK_CATEGORY, -t.amountCents, t.accountId)
+    add(t.categoryId ?? FALLBACK_CATEGORY, -t.amountCents, t.accountId, { date: t.date, title: t.counterparty, ref: { type: 'tx', id: t.id! } })
   }
   for (const o of orders) {
     if (!o.date.startsWith(key) || !countsAsSpending(o) || linkedOrders.has(o.orderId)) continue
-    add('online', o.totalCents, 'amazon')
+    add('online', o.totalCents, 'amazon', { date: o.date, title: 'Amazon-Bestellung', ref: { type: 'order', id: o.orderId } })
   }
   for (const r of receipts) {
     if (!r.date.startsWith(key) || linkedReceipts.has(r.id!)) continue
-    add(receiptCategory(r.store), r.totalCents, 'bons')
+    add(receiptCategory(r.store), r.totalCents, 'bons', { date: r.date, title: `Kassenbon ${r.store}`, ref: { type: 'receipt', id: r.id! } })
   }
 
   return {
@@ -101,5 +116,6 @@ export function monthOverview(key: string, { transactions, orders, receipts, acc
     bySource,
     savingCents: saving,
     savingByAccount,
+    entries: entries.sort((a, b) => b.date.localeCompare(a.date)),
   }
 }

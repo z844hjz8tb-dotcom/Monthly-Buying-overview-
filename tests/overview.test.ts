@@ -52,6 +52,22 @@ describe('monthOverview', () => {
     expect(o.bySource).toEqual({ amex: 2500, ing: 1182, paypal: 4999 })
   })
 
+  it('listet jede gezählte Ausgabe einzeln (für die Kategorie-Seite)', () => {
+    const o = monthOverview('2026-11', {
+      transactions: [
+        tx({ id: 1, date: '2026-11-03', accountId: 'paypal', amountCents: -1999, categoryId: 'online', counterparty: 'Musterhändler' }),
+        tx({ id: 2, date: '2026-11-04', accountId: 'ing', amountCents: -1999, categoryId: 'online', viaTransactionId: 1 }), // zählt nicht
+        tx({ id: 3, date: '2026-11-05', accountId: 'ing', amountCents: -2500, categoryId: 'online', linkedOrderId: 'A' }),
+      ],
+      orders: [order('A', '2026-11-02', 2500), order('B', '2026-11-06', 1000)],
+      receipts: [receipt(1, 'Lidl', '2026-11-01', 1182)],
+    })
+    const online = o.entries.filter((e) => e.categoryId === 'online')
+    expect(online.map((e) => [e.ref.type, e.ref.id, e.cents])).toEqual([['order', 'B', 1000], ['tx', 3, 2500], ['tx', 1, 1999]])
+    expect(online.reduce((s, e) => s + e.cents, 0)).toBe(o.byCategory.find((c) => c.categoryId === 'online')!.cents)
+    expect(o.entries.find((e) => e.ref.type === 'receipt')).toMatchObject({ categoryId: 'lebensmittel', title: 'Kassenbon Lidl' })
+  })
+
   it('verrechnet Erstattungen mit der Kategorie', () => {
     const o = monthOverview('2026-11', {
       transactions: [tx({ amountCents: -5000, categoryId: 'online' }), tx({ amountCents: 2000, categoryId: 'online' })],

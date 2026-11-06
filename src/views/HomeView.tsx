@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/schema'
 import { Icon } from '../components/Icon'
 import { formatCents } from '../lib/money'
 import { formatMonth, monthKey, shiftMonth } from '../stats/spending'
-import { monthOverview } from '../stats/overview'
+import { loadMonthOverview } from '../finance/monthData'
 import { accountIcon, categoryColor, categoryIcon, useFinanceRefs } from '../finance/useFinance'
 import { isSavingsKind } from '../finance/defaults'
 
@@ -22,17 +21,7 @@ export function HomeView() {
   const data = useLiveQuery(async () => {
     if (!valid) return null
     const prevKey = shiftMonth(key, -1)
-    const range = (k: string) => [`${k}-01`, `${k}-31`] as const
-    const load = async (k: string) => {
-      const [from, to] = range(k)
-      const [transactions, orders, receipts, accounts] = await Promise.all([
-        db.transactions.where('date').between(from, to, true, true).toArray(),
-        db.orders.where('date').between(from, to, true, true).toArray(),
-        db.receipts.where('date').between(from, to, true, true).toArray(),
-        db.accounts.toArray(),
-      ])
-      return monthOverview(k, { transactions, orders, receipts, accounts })
-    }
+    const load = async (k: string) => (await loadMonthOverview(k)).overview
     const [cur, prev] = await Promise.all([load(key), load(prevKey)])
     return { cur, prev }
   }, [key])
@@ -102,6 +91,7 @@ export function HomeView() {
               const cat = refs.categoryById.get(c.categoryId)
               return (
                 <li key={c.categoryId}>
+                  <Link to={`/kategorie/${c.categoryId}/${key}`} className="row-link">
                   <span className="avatar cat" style={{ background: categoryColor(cat) }} aria-hidden="true">
                     <Icon name={categoryIcon(cat)} size={20} />
                   </span>
@@ -110,6 +100,8 @@ export function HomeView() {
                     <span className="row-sub muted">{c.count} {c.count === 1 ? 'Ausgabe' : 'Ausgaben'} · {Math.round((c.cents / cur.expenseCents) * 100)} %</span>
                   </div>
                   <span className="row-amount">{formatCents(c.cents)}</span>
+                  <Icon name="right" size={18} className="chevron" />
+                  </Link>
                   <span className="share" style={{ marginLeft: 54 }} aria-hidden="true">
                     <span style={{ width: `${Math.max(3, (c.cents / max) * 100)}%`, background: categoryColor(cat) }} />
                   </span>
