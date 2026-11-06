@@ -18,8 +18,8 @@ export function AmazonScriptCard() {
   }
 
   function download() {
-    const url = URL.createObjectURL(new Blob([configured], { type: 'text/javascript' }))
-    const a = Object.assign(document.createElement('a'), { href: url, download: 'amazon-export.js' })
+    const url = URL.createObjectURL(new Blob([configured], { type: 'text/plain;charset=utf-8' }))
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'amazon-export.txt' })
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -42,10 +42,10 @@ export function AmazonScriptCard() {
       </label>
       <div className="button-row">
         <button onClick={copy}><Icon name="file" size={18} />Skript kopieren</button>
-        <button className="secondary" onClick={download}><Icon name="download" size={18} />Als Datei</button>
+        <button className="secondary" onClick={download}><Icon name="download" size={18} />Als Textdatei (.txt)</button>
       </div>
       {copied === 'ok' && <p className="status-box ok-text"><Icon name="check" size={18} />Kopiert – jetzt in der Konsole auf amazon.de einfügen.</p>}
-      {copied === 'error' && <p className="status-box warn"><Icon name="alert" size={18} />Kopieren ging nicht – nimm „Als Datei“ und öffne sie mit einem Texteditor.</p>}
+      {copied === 'error' && <p className="status-box warn"><Icon name="alert" size={18} />Kopieren ging nicht – nimm „Als Textdatei“, öffne sie mit dem Editor und kopiere den Inhalt.</p>}
       <details className="warnings">
         <summary>Was macht das Skript?</summary>
         <p className="muted small">
