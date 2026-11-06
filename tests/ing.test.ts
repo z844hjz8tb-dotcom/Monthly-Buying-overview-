@@ -93,7 +93,7 @@ describe('Einordnung', () => {
       ['AMERICAN EXPRESS EUROPE S.A. (Germany branch)', 'transfer', 'amex'],
       ['Wertpapierkauf: ISHS CORE DAX UC.ET', 'saving', 'depot'],
       ['Bundesagentur fur Arbeit - Familienkasse', 'income', null],
-      ['Kindergartenver. St. Muster e.V.', 'expense', null],
+      ['Kindergartenver. St. Muster e.V.', 'expense', 'schule'],
       ['Abschluss', 'expense', null],
     ])
     expect(plan[4].tx.linkedOrderId).toBe('306-1234567-7654321')
@@ -140,7 +140,7 @@ describe('Import', () => {
     const k = all.find((t) => t.counterparty.startsWith('Kindergarten'))!
     const kleingeld = all.find((t) => t.counterparty.startsWith('Kleingeld'))!
     await db.transactions.update(kleingeld.id!, { edited: true, kind: 'expense', categoryId: 'sonstiges' })
-    await db.categoryRules.add({ pattern: 'Kindergartenver', field: 'counterparty', categoryId: 'freizeit' })
+    await db.categoryRules.add({ pattern: 'Kindergartenver', field: 'counterparty', categoryId: 'freizeit' }) // eigene Regel schlägt eingebaute
     await db.accounts.update('notgroschen', { matchNames: ['Kleingeld Plus'] })
     expect(await reclassifyImported(db)).toBeGreaterThan(0)
     expect((await db.transactions.get(k.id!))?.categoryId).toBe('freizeit')
@@ -151,4 +151,21 @@ describe('Import', () => {
 it('erkennt eigenes Konto auch nach dem Neu-Einordnen über "Erkennen an"', () => {
   const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }, { id: 'x', name: 'Extra', kind: 'savings' as const, order: 2, matchNames: ['Kleingeld Plus'] }] }
   expect(classify({ date: '', amountCents: -41, counterparty: 'Kleingeld Plus - Sparen', bookingText: 'Überweisung', purpose: '' }, ctx)).toMatchObject({ kind: 'transfer', transferAccountId: 'x' })
+})
+
+it('neue Kategorien: Hausbau, Gesundheit, Haustier, Schule', () => {
+  const ctx = { accountId: 'ing', ownNames: [], rules: [], accounts: [{ id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 }] }
+  const cat = (counterparty: string, purpose = '') => classify({ date: '', amountCents: -100, counterparty, bookingText: 'Lastschrift', purpose }, ctx).categoryId
+  expect(cat('Max Architekt', 'Entwurf und Genehmigungsplanung')).toBe('hausbau')
+  expect(cat('Dr. A. Muster Notare', 'Rechnung 1')).toBe('hausbau')
+  expect(cat('Energieberatung Muster GmbH')).toBe('hausbau')
+  expect(cat('VISA FRITZ-REUTER-APOTHEKE')).toBe('gesundheit')
+  expect(cat('Zahnarztpraxis Dr. Muster')).toBe('gesundheit')
+  expect(cat('Tierarztpraxis Muster')).toBe('haustier')
+  expect(cat('VISA FELL FIT TIERFACHMARKT')).toBe('haustier')
+  expect(cat('AGILA Haustierversicherung AG')).toBe('haustier')
+  expect(cat('Kindergartenver. St. Muster e.V.')).toBe('schule')
+  expect(cat('Grundschule Musterstadt')).toBe('schule')
+  expect(cat('HUK-Coburg Versicherung')).toBe('versicherungen')
+  expect(cat('Rossmann 1234')).toBe('drogerie')
 })

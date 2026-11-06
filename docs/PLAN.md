@@ -20,11 +20,13 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Haushaltsbuch H2 (ING-Import): CSV aus dem ING-Online-Banking (Daten → Importe bzw. Konten → „Umsätze importieren“). Vorschau mit Einordnung, Duplikat-Erkennung, Kontostand und IBAN aus der Datei, eigene Namen aus dem Dateikopf. Importierte Buchungen lassen sich einordnen; „Für alle … merken“ lernt Kategorie-Regeln bzw. „Erkennen an“ beim Zielkonto und ordnet alle gleichen Buchungen neu ein. Mit der echten Datei des Nutzers (504 Buchungen, Aug–Nov) lokal geprüft – die Datei ist **nicht** im Repo.
 
+- Kategorien ergänzt (06.11.2026): **Hausbau**, **Gesundheit**, **Haustier**, **Schule & Kita** (14 Kategorien). Bei geänderten eingebauten Regeln (`RULES_VERSION`) werden importierte Buchungen beim App-Start einmal neu eingeordnet.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**
 1. **H3/H4 Importe Amex, PayPal** – wartet auf je eine Beispiel-Exportdatei (nur am Laptop/PC möglich). Danach PayPal-Abbuchungen auf der ING mit den PayPal-Zahlungen verknüpfen.
-   Offene Fragen an den Nutzer: Bausparkasse „U.A.“-Lastschrift (monatlich) = Kreditrate oder Sparrate? Eigene Kategorie „Hausbau“ (Architekt, Notar, Handwerker)? Weitere Kategorien (Gesundheit, Kinder, Haustier)?
+   Offene Frage an den Nutzer: Bausparkasse „U.A.“-Lastschrift (monatlich) = Tilgung (Kredite) oder Einzahlung in den Bausparvertrag (Gespart)? Nutzer prüft Vertrag/Jahresauszug; bis dahin Kredite.
 2. Nutzer erfasst echte Bons auf dem iPhone und ordnet Artikel zu → Rückmeldungen einarbeiten (Text unter „Erkannten Text anzeigen“ hilft bei Fehlern). Rückmeldung zum Design und zur bevorzugten Farbwelt abwarten.
 3. **M2 Amazon-Konsolen-Skript** – ebenfalls Laptop: wartet auf gespeicherte HTML-Seiten vom PC („Meine Bestellungen“ + eine Bestelldetail-Seite).
 4. Monatliche Erinnerung am 1. (z. B. `.ics`-Kalendereintrag) – bisher nur Hinweis in der App.

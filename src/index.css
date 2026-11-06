@@ -144,6 +144,10 @@
   --cat-8: #ca8a04;
   --cat-9: #e11d48;
   --cat-10: #64748b;
+  --cat-11: #9a3412;
+  --cat-12: #0d9488;
+  --cat-13: #65a30d;
+  --cat-14: #4f46e5;
 }
 
 * { box-sizing: border-box; }

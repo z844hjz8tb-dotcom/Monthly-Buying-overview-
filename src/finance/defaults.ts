@@ -10,13 +10,17 @@ export const DEFAULT_ACCOUNTS: Account[] = [
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'lebensmittel', name: 'Lebensmittel', icon: 'cart', color: 'cat-1', order: 1 },
   { id: 'drogerie', name: 'Drogerie', icon: 'droplet', color: 'cat-2', order: 2 },
+  { id: 'gesundheit', name: 'Gesundheit', icon: 'heart', color: 'cat-12', order: 2.5 },
   { id: 'online', name: 'Online-Shopping', icon: 'package', color: 'cat-3', order: 3 },
   { id: 'wohnen', name: 'Wohnen', icon: 'home', color: 'cat-4', order: 4 },
+  { id: 'hausbau', name: 'Hausbau', icon: 'hammer', color: 'cat-11', order: 4.5 },
   { id: 'kredite', name: 'Kredite', icon: 'percent', color: 'cat-5', order: 5 },
   { id: 'versicherungen', name: 'Versicherungen', icon: 'shield', color: 'cat-6', order: 6 },
   { id: 'abos', name: 'Abos', icon: 'repeat', color: 'cat-7', order: 7 },
   { id: 'mobilitaet', name: 'Mobilität', icon: 'car', color: 'cat-8', order: 8 },
   { id: 'freizeit', name: 'Freizeit', icon: 'ticket', color: 'cat-9', order: 9 },
+  { id: 'schule', name: 'Schule & Kita', icon: 'school', color: 'cat-14', order: 9.3 },
+  { id: 'haustier', name: 'Haustier', icon: 'paw', color: 'cat-13', order: 9.6 },
   { id: 'sonstiges', name: 'Sonstiges', icon: 'tag', color: 'cat-10', order: 10 },
 ]
 
