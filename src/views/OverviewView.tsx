@@ -5,20 +5,21 @@ import { db } from '../db/schema'
 import { formatCents } from '../lib/money'
 import { YearChart } from '../components/YearChart'
 import { Icon } from '../components/Icon'
-import { formatMonth, formatMonthShort, monthKey, yearSummary, yearsWithData } from '../stats/spending'
+import { formatMonth, formatMonthShort, monthKey, refundsByOrder, yearSummary, yearsWithData } from '../stats/spending'
 
 const REMIND_AFTER_DAYS = 30
 
 export function OverviewView() {
   const data = useLiveQuery(async () => ({
     orders: await db.orders.toArray(),
+    refunds: refundsByOrder(await db.transactions.where('linkedOrderId').above('').toArray()),
     lastImport: (await db.meta.get('lastImportAt'))?.value,
     now: Date.now(),
   }))
   const [chosenYear, setChosenYear] = useState<number | null>(null)
 
   if (!data) return null
-  const { orders, lastImport, now } = data
+  const { orders, refunds, lastImport, now } = data
 
   if (orders.length === 0) {
     return (
@@ -36,7 +37,7 @@ export function OverviewView() {
 
   const years = yearsWithData(orders)
   const year = chosenYear ?? years[0]
-  const months = yearSummary(orders, year)
+  const months = yearSummary(orders, year, refunds)
   const yearTotal = months.reduce((s, m) => s + m.totalCents, 0)
   const yearOrders = months.reduce((s, m) => s + m.orderCount, 0)
   const activeMonths = months.filter((m) => m.orderCount > 0).length

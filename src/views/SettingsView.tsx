@@ -6,7 +6,7 @@ import { downloadJson } from '../lib/download'
 import { getLook, LOOKS, setLook, type LookId } from '../lib/look'
 import { Icon } from '../components/Icon'
 import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
-import { buildDemoExport, buildDemoReceipts, buildDemoTransactions, buildDemoTransfers, DEMO_ACCOUNTS, DEMO_PREFIX } from '../import/demo'
+import { buildDemoExport, buildDemoReceipts, buildDemoRefund, buildDemoTransactions, buildDemoTransfers, DEMO_ACCOUNTS, DEMO_PREFIX } from '../import/demo'
 import { saveTransaction, saveTransfer } from '../finance/store'
 import { Link } from 'react-router-dom'
 import { deleteReceipt, saveReceipt } from '../receipts/store'
@@ -25,13 +25,15 @@ export function SettingsView() {
     (await db.transactions.filter((t) => !!t.demo).count()))
 
   async function loadDemo() {
-    const { orders } = parseAmazonExport(JSON.stringify(buildDemoExport()))
+    const demoExport = buildDemoExport()
+    const { orders } = parseAmazonExport(JSON.stringify(demoExport))
     await applyImport(db, await planImport(db, orders))
     const receipts = buildDemoReceipts()
     if (!(await db.receipts.filter((r) => !!r.demo).count())) {
       for (const r of receipts) await saveReceipt(db, r)
     }
-    const transactions = buildDemoTransactions()
+    const refund = buildDemoRefund(demoExport)
+    const transactions = [...buildDemoTransactions(), ...(refund ? [refund] : [])]
     if (!(await db.transactions.filter((t) => !!t.demo).count())) {
       await db.accounts.bulkPut(DEMO_ACCOUNTS)
       for (const t of transactions) await saveTransaction(db, t)
