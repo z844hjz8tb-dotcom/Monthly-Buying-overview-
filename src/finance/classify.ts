@@ -174,6 +174,7 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
     if (/abbuchung|auszahlung/i.test(row.bookingText) && row.amountCents < 0) {
       return move(ctx.accounts.find((a) => a.id === 'ing' && !a.hidden) ?? ctx.accounts.find((a) => a.kind === 'giro' && !a.demo && !a.hidden))
     }
+    // genaue Einordnung (Später bezahlen / Ratenzahlung / Kauf vor dem Export) braucht die anderen Buchungen: settlePaypalRepayments
     if (/paypal\s*\(?europe/i.test(row.counterparty) && row.amountCents < 0) return { kind: 'transfer', counterparty: 'PayPal-Rückzahlung (Später bezahlen)' }
   }
 

@@ -6,9 +6,60 @@ const MAX_DAYS = 7
 const days = (a: string, b: string) => (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000
 const flat = (s: string | undefined) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
-/** Bank- oder Kartenbuchung, hinter der PayPal steckt */
-export const isPaypalBankRow = (t: Pick<Transaction, 'accountId' | 'rawCounterparty' | 'counterparty' | 'purpose'>) =>
-  t.accountId !== 'paypal' && /paypal/i.test(`${t.rawCounterparty ?? t.counterparty} ${t.purpose ?? ''}`)
+/** Bank- oder Kartenbuchung, hinter der PayPal steckt (Buchungen auf PayPal-Konten selbst ausgenommen) */
+export const isPaypalBankRow = (t: Pick<Transaction, 'rawCounterparty' | 'counterparty' | 'purpose' | 'source'>) =>
+  t.source !== 'paypal' && /paypal/i.test(`${t.rawCounterparty ?? t.counterparty} ${t.purpose ?? ''}`)
+
+/** Rückzahlung an PayPal ("Später bezahlen" oder Ratenzahlung) auf einem PayPal-Konto */
+export const isPaypalRepayment = (t: Pick<Transaction, 'source' | 'rawCounterparty' | 'amountCents'>) =>
+  t.source === 'paypal' && t.amountCents < 0 && /paypal\s*\(?europe/i.test(t.rawCounterparty ?? '')
+
+export const LABEL_PAYLATER = 'PayPal-Rückzahlung (Später bezahlen)'
+export const LABEL_INSTALLMENT = 'PayPal-Ratenzahlung'
+export const LABEL_EARLIER = 'PayPal Später bezahlen (Kauf vor dem Export)'
+
+type Settled = Pick<Transaction, 'kind' | 'categoryId' | 'counterparty'>
+
+/**
+ * Was ist eine Rückzahlung an PayPal?
+ *  - passt sie zu einem Einkauf mit "PayPal-Käuferkredit" (gleicher Betrag, bis 75 Tage vorher), zählt der Einkauf → Umbuchung
+ *  - kommt derselbe Betrag etwa monatlich wieder, ist es eine Ratenzahlung → Rate zählt unter "Kredite"
+ *  - sonst war der Einkauf vor dem Exportzeitraum → die Rückzahlung zählt als Ausgabe (sonst ginge das Geld verloren)
+ */
+export function settleRepayments(paypalTxs: Transaction[]): Map<number, Settled> {
+  const repayments = paypalTxs.filter(isPaypalRepayment).sort((a, b) => a.date.localeCompare(b.date))
+  const purchases = paypalTxs.filter((t) => (t.funding ?? []).some((f) => f.via === 'credit'))
+  const used = new Set<number>()
+  const out = new Map<number, Settled>()
+  for (const r of repayments) {
+    const purchase = purchases.find((p) =>
+      !used.has(p.id!) && p.accountId === r.accountId && (p.funding ?? []).some((f) => f.via === 'credit' && f.cents === -r.amountCents) &&
+      days(p.date, r.date) >= 0 && days(p.date, r.date) <= 75)
+    if (purchase) {
+      used.add(purchase.id!)
+      out.set(r.id!, { kind: 'transfer', categoryId: undefined, counterparty: LABEL_PAYLATER })
+      continue
+    }
+    const monthly = repayments.some((o) => o.id !== r.id && o.accountId === r.accountId && o.amountCents === r.amountCents && Math.abs(days(o.date, r.date)) >= 20 && Math.abs(days(o.date, r.date)) <= 40)
+    out.set(r.id!, monthly
+      ? { kind: 'expense', categoryId: 'kredite', counterparty: LABEL_INSTALLMENT }
+      : { kind: 'expense', categoryId: undefined, counterparty: LABEL_EARLIER })
+  }
+  return out
+}
+
+/** Ordnet Rückzahlungen an PayPal neu ein (nicht von Hand geänderte). Läuft mit linkPaypal. */
+export async function settlePaypalRepayments(db: TrackerDB): Promise<number> {
+  const paypalTxs = await db.transactions.filter((t) => t.source === 'paypal').toArray()
+  let changed = 0
+  for (const [id, s] of settleRepayments(paypalTxs)) {
+    const t = paypalTxs.find((x) => x.id === id)!
+    if (t.edited || (t.kind === s.kind && t.categoryId === s.categoryId && t.counterparty === s.counterparty)) continue
+    await db.transactions.update(id, s)
+    changed++
+  }
+  return changed
+}
 
 export interface PaypalLink {
   bankTx: Transaction
@@ -46,8 +97,9 @@ export function matchPaypal(paypalTxs: Transaction[], bankTxs: Transaction[]): P
 
 /** Verknüpft alle offenen PayPal-Abbuchungen. Läuft nach jedem Bank-/PayPal-Import und beim Start. */
 export async function linkPaypal(db: TrackerDB): Promise<number> {
+  await settlePaypalRepayments(db)
   const all = await db.transactions.toArray()
-  const paypalTxs = all.filter((t) => t.accountId === 'paypal' && t.source === 'paypal')
+  const paypalTxs = all.filter((t) => t.source === 'paypal')
   if (!paypalTxs.length) return 0
   const taken = new Set(all.filter((t) => t.viaTransactionId !== undefined).map((t) => t.viaTransactionId))
   const open = paypalTxs.filter((p) => !taken.has(p.id))

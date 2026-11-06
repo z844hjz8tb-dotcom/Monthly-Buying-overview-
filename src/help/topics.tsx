@@ -100,7 +100,9 @@ export const HELP_TOPICS: HelpTopic[] = [
         <ul>
           <li>Gezählt wird die <strong>PayPal-Zahlung</strong> mit dem echten Händler (Netflix, eBay, …) und passender Kategorie.</li>
           <li>Die zugehörige Abbuchung „PayPal Europe“ auf dem Girokonto bzw. „PAYPAL *…“ auf der Karte wird automatisch erkannt (gleicher Betrag, bis 7 Tage später) und zählt <strong>nicht noch einmal</strong>. Ohne PayPal-Import zählt weiter die Abbuchung.</li>
-          <li><strong>Später bezahlen / Ratenzahlung:</strong> Der Einkauf zählt am Kauftag. Die spätere Rückzahlung an „PayPal (Europe)“ ist eine Umbuchung.</li>
+          <li><strong>Später bezahlen:</strong> Der Einkauf zählt am Kauftag. Die spätere Rückzahlung an „PayPal (Europe)“ ist eine Umbuchung.</li>
+          <li><strong>Ratenzahlung:</strong> Kommt jeden Monat derselbe Betrag an „PayPal (Europe)“, zählt die Rate unter <strong>Kredite</strong>. Eine Rückzahlung für einen Einkauf vor dem Exportzeitraum zählt als Ausgabe ohne Kategorie.</li>
+          <li><strong>Zwei PayPal-Konten</strong> (z. B. deins und das deines Partners): Die App erkennt das Konto am Dateinamen, den PayPal vergibt – Datei also nicht umbenennen. Gehört eine Datei zu einem anderen Konto, bietet die Vorschau „Neues PayPal-Konto anlegen“ an; den Namen änderst du danach unter Konten.</li>
           <li>Geld von Freunden (Handyzahlung) ist eine Einnahme; „Abbuchung“ aufs Girokonto ist eine Umbuchung.</li>
           <li>Zahlungen an Privatpersonen haben keine Kategorie – einmal zuordnen und „Für alle … merken“.</li>
           <li>Amazon-Bestellungen über PayPal werden an der Bestellnummer erkannt und nicht doppelt gezählt.</li>

@@ -33,7 +33,12 @@ const iso = (d: string) => {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null
 }
 
-export function parsePaypalCsv(text: string): BankExport {
+/** PayPal benennt die Datei nach der Konto-ID: "ABCDEFGHIJKLM-CSR-2026…csv" → "ABCDEFGHIJKLM" */
+export function paypalAccountIdFromFileName(fileName: string | undefined): string | undefined {
+  return fileName?.match(/^([A-Z0-9]{10,16})-CSR-/)?.[1]
+}
+
+export function parsePaypalCsv(text: string, fileName?: string): BankExport {
   if (!isPaypalExport(text)) throw new Error('Das ist kein PayPal-Export (CSV mit den Spalten Datum, Beschreibung, Brutto, Transaktionscode).')
   const records = parseCsv(text.replace(/^﻿/, ''), ',')
   const head = records[0].map((h) => h.trim().toLowerCase())
@@ -81,5 +86,6 @@ export function parsePaypalCsv(text: string): BankExport {
       funding: funding.get(r.code),
     }))
   const last = raws[raws.length - 1]
-  return { source: 'paypal', label: 'PayPal-Export', defaultAccountId: 'paypal', rows, saldoCents: last?.balance, saldoDate: last?.date }
+  // Konto-ID aus dem Dateinamen dient wie eine IBAN zum Wiedererkennen des richtigen PayPal-Kontos
+  return { source: 'paypal', label: 'PayPal-Export', defaultAccountId: 'paypal', iban: paypalAccountIdFromFileName(fileName), rows, saldoCents: last?.balance, saldoDate: last?.date }
 }

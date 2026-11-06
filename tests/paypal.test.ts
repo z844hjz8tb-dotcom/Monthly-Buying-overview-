@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
 import { TrackerDB, type Transaction } from '../src/db/schema'
 import { ensureDefaults } from '../src/finance/defaults'
-import { linkPaypal } from '../src/finance/paypal'
+import { LABEL_EARLIER, LABEL_INSTALLMENT, LABEL_PAYLATER, linkPaypal, settleRepayments } from '../src/finance/paypal'
 import { applyBankImport, planBankImport } from '../src/import/bank'
-import { isPaypalExport, parsePaypalCsv } from '../src/import/paypal'
+import { isPaypalExport, parsePaypalCsv, paypalAccountIdFromFileName } from '../src/import/paypal'
 import { monthOverview } from '../src/stats/overview'
 
 /** Erfundene Datei im Format des echten PayPal-Exports */
@@ -91,5 +91,56 @@ describe('PayPal importieren und verknüpfen', () => {
     expect(okt.incomeCents).toBe(2500)
     const nov = monthOverview('2026-11', { transactions: all, orders: [], receipts: [] })
     expect(nov.expenseCents).toBe(0) // Rückzahlung an PayPal zählt nicht noch einmal
+  })
+})
+
+describe('Rückzahlungen an PayPal', () => {
+  let id = 1
+  const pp = (accountId: string, date: string, amountCents: number, extra: Partial<Transaction> = {}): Transaction => ({
+    id: id++, accountId, date, amountCents, counterparty: 'x', kind: 'expense', source: 'paypal', createdAt: '', ...extra,
+  })
+  const repay = (accountId: string, date: string, cents: number) =>
+    pp(accountId, date, -cents, { kind: 'transfer', rawCounterparty: 'PayPal (Europe) S.à r.l. et Cie, SCA', counterparty: LABEL_PAYLATER })
+
+  it('unterscheidet Später bezahlen, Ratenzahlung und Kauf vor dem Export', () => {
+    const purchase = pp('paypal', '2026-07-10', -3333, { funding: [{ via: 'credit', cents: 3333 }] })
+    const payLater = repay('paypal', '2026-08-09', 3333)
+    const rate1 = repay('paypal', '2026-07-01', 5555)
+    const rate2 = repay('paypal', '2026-08-01', 5555)
+    const earlier = repay('paypal', '2026-07-03', 7777)
+    const r = settleRepayments([purchase, payLater, rate1, rate2, earlier])
+    expect(r.get(payLater.id!)).toMatchObject({ kind: 'transfer', counterparty: LABEL_PAYLATER })
+    expect(r.get(rate1.id!)).toMatchObject({ kind: 'expense', categoryId: 'kredite', counterparty: LABEL_INSTALLMENT })
+    expect(r.get(rate2.id!)).toMatchObject({ kind: 'expense', categoryId: 'kredite' })
+    expect(r.get(earlier.id!)).toMatchObject({ kind: 'expense', categoryId: undefined, counterparty: LABEL_EARLIER })
+  })
+
+  it('ein Einkauf wird nur einmal zurückgezahlt, und nur auf demselben PayPal-Konto', () => {
+    const purchase = pp('paypal', '2026-07-10', -3333, { funding: [{ via: 'credit', cents: 3333 }] })
+    const a = repay('paypal', '2026-08-09', 3333)
+    const other = repay('pp-partner', '2026-08-09', 3333)
+    const r = settleRepayments([purchase, a, other])
+    expect(r.get(a.id!)?.kind).toBe('transfer')
+    expect(r.get(other.id!)).toMatchObject({ kind: 'expense', counterparty: LABEL_EARLIER })
+  })
+})
+
+describe('Mehrere PayPal-Konten', () => {
+  it('liest die Konto-ID aus dem Dateinamen', () => {
+    expect(paypalAccountIdFromFileName('ABCDEFGHIJK12-CSR-20260701000000-20260930235959-20261106082749.CSV')).toBe('ABCDEFGHIJK12')
+    expect(paypalAccountIdFromFileName('download.csv')).toBeUndefined()
+    expect(parsePaypalCsv(text, 'ABCDEFGHIJK12-CSR-1.CSV').iban).toBe('ABCDEFGHIJK12')
+  })
+
+  it('verknüpft auch Abbuchungen für ein zweites PayPal-Konto', async () => {
+    const db = await setup()
+    await db.accounts.add({ id: 'pp-partner', name: 'PayPal Erika', kind: 'paypal', order: 50 })
+    const ex = parsePaypalCsv(text)
+    await applyBankImport(db, ex, 'pp-partner', await planBankImport(db, ex, 'pp-partner'))
+    await db.transactions.add({
+      accountId: 'ing', date: '2026-10-04', amountCents: -1249, counterparty: 'PayPal', rawCounterparty: 'PayPal Europe S.a.r.l. et Cie S.C.A',
+      purpose: 'Ihr Einkauf bei Musterstream AB', bookingText: 'Lastschrift', kind: 'expense', source: 'ing', createdAt: '',
+    })
+    expect(await linkPaypal(db)).toBe(1)
   })
 })
