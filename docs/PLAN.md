@@ -39,6 +39,8 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 - Gespart-Seite (`/gespart/:monat`, `src/views/SavingsView.tsx`): jede Sparbuchung nach Zielkonto, mit Herkunftskonto; „Ziel noch offen“ mit Hinweis. Daten aus `monthOverview().savingEntries`.
 - Bank-Import mit mehreren Konten derselben Bank: andere IBAN/PayPal-Konto-ID oder gleicher Zeitraum ohne eine gleiche Buchung → Hinweis in der Vorschau + „Neues Konto … anlegen“ (Name und Art aus dem ING-Dateikopf, z. B. Extra-Konto → Tagesgeld); Vorauswahl auch über den Kontonamen bei Konten ohne IBAN. Vorher landete der Export eines anderen ING-Kontos still im Girokonto.
 
+- Design-Skills (emilkowalski/skills) in `.claude/skills/`. Durchgang mobile-native + break-ui (08.11.): Kopfzahl „Gespart“ wurde bei großen Beträgen abgeschnitten → bricht um, Kopfzahl skaliert; Namen brachen mitten im Wort → Silbentrennung (lang=de), in Listen höchstens 3 Zeilen; Artikelzeile einzeilig; „%“ und Anzahl mit geschütztem Leerzeichen; Bedienelemente ohne Doppeltipp-Verzögerung, ohne Markieren beim langen Drücken, mit Rückmeldung beim Antippen; kein Gummiband der ganzen Seite; Statusleiste folgt Hell/Dunkel live. Eingabefelder waren schon ≥ 16 px. Auf dem iPhone selbst zu prüfen: Gefühl beim Antippen, kein Gummiband, Statusleiste beim Wechsel Hell/Dunkel.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**

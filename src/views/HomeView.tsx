@@ -62,7 +62,7 @@ export function HomeView() {
         <p className="hero-sub">
           {cur.incomeCents > 0 && <span className="pill"><Icon name="income" size={14} />Einnahmen {formatCents(cur.incomeCents)}</span>}
           {cur.savingCents > 0 && cur.incomeCents > 0 && (
-            <span className="pill">Sparquote {Math.round((cur.savingCents / cur.incomeCents) * 100)} %</span>
+            <span className="pill">Sparquote {Math.round((cur.savingCents / cur.incomeCents) * 100)}{'\u00a0'}%</span>
           )}
           {prev.expenseCents > 0 && (
             <span className="pill">
@@ -97,7 +97,7 @@ export function HomeView() {
                   </span>
                   <div className="row-main">
                     <span className="row-title">{cat?.name ?? c.categoryId}</span>
-                    <span className="row-sub muted">{c.count} {c.count === 1 ? 'Ausgabe' : 'Ausgaben'} · {Math.round((c.cents / cur.expenseCents) * 100)} %</span>
+                    <span className="row-sub muted">{c.count}{'\u00a0'}{c.count === 1 ? 'Ausgabe' : 'Ausgaben'} · {Math.round((c.cents / cur.expenseCents) * 100)}{'\u00a0'}%</span>
                   </div>
                   <span className="row-amount">{formatCents(c.cents)}</span>
                   <Icon name="right" size={18} className="chevron" />
