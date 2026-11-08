@@ -25,6 +25,11 @@ export function applyLook(id: LookId = getLook()): void {
   if (meta && bg) meta.setAttribute('content', bg)
 }
 
+// Hell/Dunkel des Systems wechselt während die App offen ist → Statusleiste (theme-color) nachziehen
+if (typeof window !== 'undefined' && window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => applyLook())
+}
+
 export function setLook(id: LookId): void {
   try {
     localStorage.setItem(KEY, id)

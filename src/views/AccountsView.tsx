@@ -162,7 +162,7 @@ function TransactionRow({ t, refs, items }: { t: Transaction; refs: Refs; items?
         <div className="row-main">
           <span className="row-title">{t.counterparty || '—'}</span>
           <span className="row-sub muted">{formatDay(t.date)} · {label}{t.viaTransactionId !== undefined && ' · über PayPal'}</span>
-          {items && <span className="row-sub muted row-items"><Icon name="package" size={12} /> {items}</span>}
+          {items && <span className="row-sub muted row-items"><Icon name="package" size={12} /><span>{items}</span></span>}
         </div>
         <span className={`row-amount ${isMove ? 'amount-transfer' : t.amountCents > 0 ? 'amount-in' : 'amount-out'}`}>
           {t.amountCents > 0 ? '+' : '−'}{formatCents(Math.abs(t.amountCents))}

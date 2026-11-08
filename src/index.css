@@ -226,7 +226,7 @@ body {
 }
 .hero > * { position: relative; z-index: 1; }
 .hero-label { margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--on-hero-muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.hero-number { margin: 2px 0 0; font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.hero-number { margin: 2px 0 0; font-size: clamp(2rem, 10.5vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .hero-sub { margin: 8px 0 0; color: var(--on-hero-muted); font-size: 0.92rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .hero-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 .hero select { background: var(--hero-glass); color: var(--on-hero); border: 0; min-height: 36px; font-weight: 700; }
@@ -396,7 +396,7 @@ select:focus, input:focus, .paste-area:focus { border-color: var(--accent); back
 .rows li.inactive .row-title, .rows li.inactive .row-amount { color: var(--muted); text-decoration: line-through; }
 .row-link { display: flex; align-items: center; gap: 12px; width: 100%; color: inherit; text-decoration: none; }
 .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.row-title { font-weight: 600; overflow-wrap: anywhere; }
+.row-title { font-weight: 600; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
 .row-sub { font-size: 0.8rem; }
 .row-amount { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
 .chevron { color: var(--muted); }
@@ -517,7 +517,7 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
   white-space: nowrap;
   z-index: 2;
 }
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .bar-slot:not(:disabled):hover .bar-tip { display: block; }
   .bar-slot:not(:disabled):hover .bar { opacity: 1; }
 }
@@ -747,7 +747,9 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .toggle-row input[type='checkbox']:checked { background: var(--btn); box-shadow: none; }
 .toggle-row input[type='checkbox']:checked::after { transform: translateX(20px); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.hero-split { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+.hero-split { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; column-gap: 12px; row-gap: 4px; }
+.hero-split > * { min-width: 0; }
+.hero-split .saved { margin-left: auto; }
 .hero-split .saved { text-align: right; }
 .hero-split .saved .hero-label { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
 .hero-split .saved-number { margin: 2px 0 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -790,7 +792,35 @@ summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .badge .icon { display: inline-block; vertical-align: -1px; }
 
 .row-items { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.row-items > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-items svg { flex: none; }
 
 a.saved, a.card-head { color: inherit; text-decoration: none; }
 a.card-head .row-amount { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ============================================================
+   Wie eine App am iPhone (Skill mobile-native)
+   ============================================================ */
+html {
+  -webkit-text-size-adjust: 100%; /* keine Schriftvergrößerung im Querformat */
+  overscroll-behavior-y: none;    /* kein Gummiband der ganzen Seite hinter Kopf- und Navigationsleiste */
+}
+/* Bedienelemente: kein 300-ms-Warten auf Doppeltipp, kein Markieren/Kontextmenü beim langen Drücken.
+   Inhalte (Texte in Buchungen, Bestellnummern) bleiben markierbar. */
+button, a, [role='button'], .chip, .tile, .import-tile, .round-btn, .bottom-nav a, .segmented button, .row-link, label.toggle-row {
+  touch-action: manipulation;
+}
+button, [role='button'], .chip, .tile, .import-tile, .round-btn, .bottom-nav a, .segmented button, .row-link {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Rückmeldung beim Aufsetzen des Fingers (nicht erst beim Loslassen) */
+.row-link, .tile, .import-tile, .reminder, .bottom-nav a, .chip, .round-btn {
+  transition: background-color 100ms ease-out, transform 100ms ease-out, opacity 100ms ease-out;
+}
+.row-link:active, .reminder:active { opacity: 0.6; }
+.tile:active, .import-tile:active, .chip:active, .round-btn:active, .bottom-nav a:active { transform: scale(0.96); }
+
+/* Listen: lange Namen (z. B. Behörden, Händler mit Ort) höchstens drei Zeilen – voller Name in der Buchung */
+.rows .row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }

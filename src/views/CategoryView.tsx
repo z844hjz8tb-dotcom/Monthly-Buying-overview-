@@ -73,7 +73,7 @@ export function CategoryView() {
                   <div className="row-main">
                     <span className="row-title">{e.title || '—'}</span>
                     <span className="row-sub muted">{formatDay(e.date)} · {sourceName(e.source)}{e.cents < 0 && ' · Erstattung'}</span>
-                    {e.detail && <span className="row-sub muted row-items"><Icon name="package" size={12} /> {e.detail}</span>}
+                    {e.detail && <span className="row-sub muted row-items"><Icon name="package" size={12} /><span>{e.detail}</span></span>}
                   </div>
                   <span className={`row-amount ${e.cents < 0 ? 'amount-in' : ''}`}>{e.cents < 0 ? '+' : ''}{formatCents(Math.abs(e.cents))}</span>
                   <Icon name="right" size={18} className="chevron" />

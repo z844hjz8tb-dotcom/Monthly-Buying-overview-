@@ -33,7 +33,7 @@ export function SavingsView() {
         <p className="hero-number">{formatCents(data.savingCents)}</p>
         <p className="hero-sub">
           <span className="pill">{data.savingEntries.length} {data.savingEntries.length === 1 ? 'Sparbuchung' : 'Sparbuchungen'}</span>
-          {data.incomeCents > 0 && data.savingCents > 0 && <span className="pill">Sparquote {Math.round((data.savingCents / data.incomeCents) * 100)} %</span>}
+          {data.incomeCents > 0 && data.savingCents > 0 && <span className="pill">Sparquote {Math.round((data.savingCents / data.incomeCents) * 100)}{'\u00a0'}%</span>}
         </p>
         <div className="hero-actions">
           <Link className="button on-hero ghost" to={`/start/${month}`}><Icon name="left" size={18} />Übersicht</Link>
