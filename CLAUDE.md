@@ -25,6 +25,7 @@ Persönliche PWA (React + TypeScript + Vite, Dexie/IndexedDB) für Amazon-Ausgab
 - `tests/fixtures/` – echte Bon-Texte, **ohne Adressen, Karten- und Zahlungsdaten**; Bank-Testdateien sind **komplett erfunden** (Max/Erika Muster). Echte Exporte des Nutzers nie committen, auch keine Werte daraus (Beträge, Händler- oder Ortsnamen) in Testdateien, Tests oder Kommentaren; vor jedem Commit danach suchen (Repo ist öffentlich)
 
 ## Arbeitsweise
+- Design-Skills in `.claude/skills/` (aus emilkowalski/skills): bei UI-Arbeit `mobile-native` und `emil-design-eng` anwenden, neue Ansichten mit `break-ui` prüfen.
 - Mobile-first (Nutzer verwendet ein iPhone); UI-Änderungen in Playwright mit iPhone-Emulation prüfen.
 - Feature-Branch → PR → Squash-Merge nach `main` → Deploy-Lauf (GitHub Actions) prüfen.
 - Beträge immer in ganzen Cent.
