@@ -52,7 +52,8 @@ export function BankImportView() {
         setOwnNames(names.join(', '))
       }
       const accounts = await db.accounts.toArray()
-      const byIban = ex.iban ? accounts.find((a) => a.iban === ex.iban) : undefined
+      const flatIban = (v?: string) => (v ?? '').replace(/\s+/g, '').toUpperCase()
+      const byIban = ex.iban ? accounts.find((a) => a.iban && flatIban(a.iban) === flatIban(ex.iban)) : undefined
       // PayPal: ohne bekannte Konto-ID ein PayPal-Konto nehmen, das noch keiner Datei zugeordnet ist
       const freePaypal = ex.source === 'paypal' && ex.iban ? accounts.find((a) => a.kind === 'paypal' && !a.iban && !a.hidden && !a.demo) : undefined
       // ohne IBAN-Treffer: ein Konto ohne IBAN mit dem Kontonamen aus der Datei (z. B. von Hand angelegtes "Extra-Konto")
