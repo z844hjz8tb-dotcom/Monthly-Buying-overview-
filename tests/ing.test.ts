@@ -206,3 +206,25 @@ it('Kreditbuchungen bekommen lesbare Namen (Zinsen, Tilgung, Rate)', () => {
   // Ansparung bleibt Sparen
   expect(c('Bausparkasse Muster AG', '000001 U.A. 11.2026')).toMatchObject({ kind: 'saving' })
 })
+
+it('Kinderkonten: Familie mit gleichem Nachnamen ist Sparen, Verwendungszweck entscheidet über das Konto', () => {
+  const accounts = [
+    { id: 'ing', name: 'Giro', kind: 'giro' as const, order: 1 },
+    { id: 'lena-depot', name: 'Depot Lena', kind: 'depot' as const, order: 2, countsAsSaving: true, matchNames: ['Sparplan Lena'] },
+    { id: 'lena-spar', name: 'Sparkonto Lena', kind: 'savings' as const, order: 3, countsAsSaving: true, matchNames: ['Lena Muster'] },
+  ]
+  const ctx = { accountId: 'ing', ownNames: ['Max Muster', 'Erika Muster'], rules: [], accounts }
+  const c = (counterparty: string, purpose: string, amountCents = -5000, bookingText = 'Lastschrift') => classify({ date: '', amountCents, counterparty, bookingText, purpose }, ctx)
+  // Dauerauftrag "Sparplan Lena" → Depot, Lastschrift ohne Zweck → Sparkonto
+  expect(c('Lena Muster', 'Sparplan Lena', -7500, 'Dauerauftrag / Terminueberweisung')).toMatchObject({ kind: 'saving', transferAccountId: 'lena-depot' })
+  expect(c('Lena Muster', '')).toMatchObject({ kind: 'saving', transferAccountId: 'lena-spar' })
+  // ohne passendes Konto: trotzdem Sparen (Ziel offen), keine Ausgabe
+  expect(c('Tim Muster', '')).toMatchObject({ kind: 'saving' })
+  expect(c('Tim Muster', '').transferAccountId).toBeUndefined()
+  // Geld von dort zurück: Umbuchung, keine Einnahme
+  expect(c('Tim Muster', '', 2000, 'Gutschrift')).toMatchObject({ kind: 'transfer' })
+  // eigener Name bleibt Umbuchung, Nachname allein ist keine Familie, Fremde bleiben Ausgabe
+  expect(c('Max Muster', 'Sparen, Urlaub')).toMatchObject({ kind: 'transfer' })
+  expect(c('Muster', 'Irgendwas')).not.toMatchObject({ kind: 'saving' })
+  expect(c('Anna Beispiel', 'Miete')).toMatchObject({ kind: 'expense' })
+})

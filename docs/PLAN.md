@@ -41,6 +41,8 @@ Persönliches Tool für die Ausgabenübersicht. Start mit Amazon-Bestellungen (P
 
 - Design-Skills (emilkowalski/skills) in `.claude/skills/`. Durchgang mobile-native + break-ui (08.11.): Kopfzahl „Gespart“ wurde bei großen Beträgen abgeschnitten → bricht um, Kopfzahl skaliert; Namen brachen mitten im Wort → Silbentrennung (lang=de), in Listen höchstens 3 Zeilen; Artikelzeile einzeilig; „%“ und Anzahl mit geschütztem Leerzeichen; Bedienelemente ohne Doppeltipp-Verzögerung, ohne Markieren beim langen Drücken, mit Rückmeldung beim Antippen; kein Gummiband der ganzen Seite; Statusleiste folgt Hell/Dunkel live. Eingabefelder waren schon ≥ 16 px. Auf dem iPhone selbst zu prüfen: Gefühl beim Antippen, kein Gummiband, Statusleiste beim Wechsel Hell/Dunkel.
 
+- ING-Konten (10.11.): Standardkonten „ING Depot“ (Depot, Sparen) und „Bausparvertrag“ (Tagesgeld, Sparen) werden einmal angelegt (nicht wieder nach Löschen); Familie (gleicher Nachname wie ein eigener Name, mind. zwei Wörter) → Sparen bzw. Umbuchung statt Ausgabe/Einnahme; „Erkennen an“ prüft den Verwendungszweck vor dem Empfänger. RULES_VERSION 9. Nutzer: Kinder haben je Depot (Dauerauftrag „Sparplan …“) und Sparkonto (Lastschrift mit Kindernamen); Extra-Konten = nur Umbuchung (Rücklagen); Depotwert von Hand. Screenshot der Extra-Konten steht aus → dann Konten + „Erkennen an“ festlegen.
+
 **Nutzer:** iPhone, Girokonto ING (dazu Extra-Konten, Depot und Kinderkonten bei der ING), Aktienkonto bei Uptevia (nur auflisten, kein Geldfluss), Kreditkarte American Express, PayPal; Kreditkosten nur als monatliche Rate; Läden Müller, Lidl (Bild-Export), Kaufland, Penny (PDF-Export).
 
 **Nächste Schritte**

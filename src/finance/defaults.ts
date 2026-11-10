@@ -7,6 +7,16 @@ export const DEFAULT_ACCOUNTS: Account[] = [
   { id: 'bar', name: 'Bargeld', kind: 'cash', order: 4 },
 ]
 
+/**
+ * Spar-Konten, die (fast) jeder mit Bausparvertrag/ING-Depot braucht. Werden einmal angelegt – nur wenn es noch
+ * kein passendes Konto gibt – und kommen nach Löschen nicht wieder (Merker in meta).
+ */
+export const SAVING_DEFAULTS: Account[] = [
+  { id: 'ing-depot', name: 'ING Depot', kind: 'depot', order: 10, countsAsSaving: true },
+  { id: 'bauspar', name: 'Bausparvertrag', kind: 'savings', order: 11, countsAsSaving: true },
+]
+const SAVING_DEFAULTS_KEY = 'savingDefaultsAdded'
+
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'lebensmittel', name: 'Lebensmittel', icon: 'cart', color: 'cat-1', order: 1 },
   { id: 'drogerie', name: 'Drogerie', icon: 'droplet', color: 'cat-2', order: 2 },
@@ -42,11 +52,20 @@ export const isSavingsKind = (kind: Account['kind']) => kind === 'savings' || ki
 
 /** Legt fehlende Standardkonten und -kategorien an; bestehende (ggf. umbenannte) bleiben unverändert. */
 export async function ensureDefaults(db: TrackerDB): Promise<void> {
-  await db.transaction('rw', db.accounts, db.categories, async () => {
+  await db.transaction('rw', db.accounts, db.categories, db.meta, async () => {
     const [accounts, categories] = await Promise.all([db.accounts.toCollection().primaryKeys(), db.categories.toCollection().primaryKeys()])
     const missingA = DEFAULT_ACCOUNTS.filter((a) => !accounts.includes(a.id))
     const missingC = DEFAULT_CATEGORIES.filter((c) => !categories.includes(c.id))
     if (missingA.length) await db.accounts.bulkAdd(missingA)
     if (missingC.length) await db.categories.bulkAdd(missingC)
+    if (!(await db.meta.get(SAVING_DEFAULTS_KEY))) {
+      const all = await db.accounts.toArray()
+      const own = all.filter((a) => !a.demo)
+      const hasDepot = own.some((a) => a.kind === 'depot' && /ing/i.test(a.name))
+      const hasBauspar = own.some((a) => /bauspar/i.test(a.name) || (a.matchNames ?? []).some((m) => /bauspar/i.test(m)))
+      const add = SAVING_DEFAULTS.filter((a) => !all.some((x) => x.id === a.id) && (a.id === 'ing-depot' ? !hasDepot : !hasBauspar))
+      if (add.length) await db.accounts.bulkAdd(add)
+      await db.meta.put({ key: SAVING_DEFAULTS_KEY, value: '1' })
+    }
   })
 }

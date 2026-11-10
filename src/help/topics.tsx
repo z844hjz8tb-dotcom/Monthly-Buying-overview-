@@ -162,6 +162,8 @@ export const HELP_TOPICS: HelpTopic[] = [
     body: (
       <>
         <p><strong>Konto anlegen:</strong> Konten → „Konto hinzufügen“. Arten: Girokonto, Tagesgeld, Depot, Kreditkarte, PayPal, Bargeld.</p>
+        <p><strong>Depot und Bausparvertrag</strong> legt die App einmal selbst an (ETF-Käufe → „ING Depot“, Ansparung → „Bausparvertrag“). Den Depotwert trägst du bei Bedarf im Konto unter „Stand“ von Hand ein.</p>
+        <p><strong>Kinderkonten:</strong> Zahlungen an Personen mit eurem Nachnamen (z. B. Sparplan oder Lastschrift eines Kinderkontos) zählen als <em>Gespart</em>, nicht als Ausgabe. Lege je Kinderkonto ein Konto an (Art Depot bzw. Tagesgeld, „zählt als Sparen“) und trage unter „Erkennen an“ ein, woran die Buchung zu erkennen ist – z. B. den Verwendungszweck des Dauerauftrags beim Depot und den Namen des Kindes beim Sparkonto. Der Verwendungszweck wird zuerst geprüft.</p>
         <p><strong>Gespart im Detail:</strong> In der Übersicht auf „Gespart“ tippen – dort steht jede Sparbuchung mit Herkunftskonto, nach Ziel sortiert. „Ziel noch offen“ heißt: Das Zielkonto fehlt noch oder wurde nicht erkannt → Buchung antippen, Ziel wählen, „Für alle … merken“.</p>
         <ul>
           <li><strong>„Geld hierhin zählt als Sparen“</strong>: Geld auf dieses Konto erscheint als <em>Gespart</em> (getrennt neben den Ausgaben). Bei Depots voreingestellt.</li>
