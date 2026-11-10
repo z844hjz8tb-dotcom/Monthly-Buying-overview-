@@ -8,7 +8,7 @@ import { Icon } from '../components/Icon'
 import { applyImport, parseAmazonExport, planImport } from '../import/amazon'
 import { buildDemoExport, buildDemoReceipts, buildDemoRefund, buildDemoTransactions, buildDemoTransfers, DEMO_ACCOUNTS, DEMO_PREFIX } from '../import/demo'
 import { saveTransaction, saveTransfer } from '../finance/store'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { deleteReceipt, saveReceipt } from '../receipts/store'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
@@ -195,6 +195,8 @@ export function SettingsView() {
         )}
       </section>
 
+      <SetupLinkCard />
+
       <section className="card">
         <h2>Beispieldaten</h2>
         <p className="muted">
@@ -215,5 +217,28 @@ export function SettingsView() {
       </section>
 
     </>
+  )
+}
+
+/** Einrichtungs-Link einfügen – nötig, wenn die App vom Home-Bildschirm läuft (eigener Speicher, kein Adressfeld). */
+function SetupLinkCard() {
+  const navigate = useNavigate()
+  const [value, setValue] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  function open() {
+    const code = value.trim().match(/[?&]k=([A-Za-z0-9_-]+)/)?.[1] ?? (/^[A-Za-z0-9_-]{20,}$/.test(value.trim()) ? value.trim() : null)
+    if (!code) return setError('Das ist kein Einrichtungs-Link.')
+    navigate(`/einrichten?k=${code}`)
+  }
+  return (
+    <section className="card">
+      <h2>Konten einrichten</h2>
+      <p className="muted small">Hast du einen Einrichtungs-Link bekommen? Hier einfügen – dann siehst du eine Vorschau der Konten.</p>
+      <div className="inline-form">
+        <input value={value} onChange={(e) => { setValue(e.target.value); setError(null) }} placeholder="Link einfügen" autoCapitalize="none" autoCorrect="off" enterKeyHint="go" aria-label="Einrichtungs-Link" />
+        <button onClick={open} disabled={!value.trim()}><Icon name="check" size={18} />Weiter</button>
+      </div>
+      {error && <p className="muted small" role="alert">{error}</p>}
+    </section>
   )
 }
