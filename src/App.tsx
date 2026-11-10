@@ -10,6 +10,7 @@ import { ProductsView } from './views/ProductsView'
 import { Icon, type IconName } from './components/Icon'
 import { CategoryView } from './views/CategoryView'
 import { SavingsView } from './views/SavingsView'
+import { SetupView } from './views/SetupView'
 import { HomeView } from './views/HomeView'
 import { AccountEditor, AccountsView, AccountView } from './views/AccountsView'
 import { TransactionEditor } from './views/TransactionEditor'
@@ -19,7 +20,7 @@ import { helpTopicFor } from './help/topics'
 
 const NAV: { to: string; label: string; icon: IconName; also?: string[] }[] = [
   { to: '/start', label: 'Übersicht', icon: 'home', also: ['/kategorie', '/gespart'] },
-  { to: '/konten', label: 'Konten', icon: 'wallet', also: ['/konto', '/buchung', '/import/bank'] },
+  { to: '/konten', label: 'Konten', icon: 'wallet', also: ['/konto', '/buchung', '/import/bank', '/einrichten'] },
   { to: '/uebersicht', label: 'Amazon', icon: 'package', also: ['/monat'] },
   { to: '/bons', label: 'Bons', icon: 'receipt', also: ['/bon/', '/zuordnen', '/produkte'] },
   { to: '/einstellungen', label: 'Daten', icon: 'database' },
@@ -30,6 +31,7 @@ const TITLES: [string, string][] = [
   ['/start', 'Übersicht'],
   ['/kategorie/', 'Kategorie'],
   ['/gespart/', 'Gespart'],
+  ['/einrichten', 'Konten einrichten'],
   ['/konten', 'Konten'],
   ['/konto-neu', 'Neues Konto'],
   ['/konto/', 'Konto'],
@@ -75,6 +77,7 @@ export default function App() {
             <Route path="/start/:month" element={<HomeView />} />
             <Route path="/kategorie/:id/:month" element={<CategoryView />} />
             <Route path="/gespart/:month" element={<SavingsView />} />
+            <Route path="/einrichten" element={<SetupView />} />
             <Route path="/konten" element={<AccountsView />} />
             <Route path="/konto-neu" element={<AccountEditor key="new" />} />
             <Route path="/konto/:id/bearbeiten" element={<AccountEditor />} />
