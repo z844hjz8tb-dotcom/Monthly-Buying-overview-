@@ -3,7 +3,7 @@ import Dexie from 'dexie'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Order, Receipt, Transaction } from '../src/db/schema'
 import { TrackerDB } from '../src/db/schema'
-import { DEFAULT_ACCOUNTS, DEFAULT_CATEGORIES, ensureDefaults } from '../src/finance/defaults'
+import { DEFAULT_ACCOUNTS, DEFAULT_CATEGORIES, SAVING_DEFAULTS, ensureDefaults } from '../src/finance/defaults'
 import { saveTransaction, signedAmount } from '../src/finance/store'
 import { monthOverview } from '../src/stats/overview'
 
@@ -122,8 +122,12 @@ describe('Datenbank-Version 3', () => {
     await ensureDefaults(db)
     await ensureDefaults(db) // zweimal: keine Duplikate
     expect(await db.orders.count()).toBe(1)
-    expect(await db.accounts.count()).toBe(DEFAULT_ACCOUNTS.length)
+    expect(await db.accounts.count()).toBe(DEFAULT_ACCOUNTS.length + SAVING_DEFAULTS.length)
     expect(await db.categories.count()).toBe(DEFAULT_CATEGORIES.length)
+    // Depot und Bausparvertrag kommen nach dem Löschen nicht wieder
+    await db.accounts.delete('bauspar')
+    await ensureDefaults(db)
+    expect(await db.accounts.get('bauspar')).toBeUndefined()
 
     await db.accounts.update('ing', { name: 'Mein Giro' })
     await ensureDefaults(db)

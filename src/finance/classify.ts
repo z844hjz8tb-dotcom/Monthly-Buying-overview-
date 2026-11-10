@@ -36,7 +36,7 @@ export type Classified = Pick<Transaction, 'kind' | 'categoryId' | 'transferAcco
 
 /** Eingebaute Regeln: Suchtext (klein, ohne Umlaute) → Kategorie. Geprüft in Empfänger und Verwendungszweck. */
 /** Wird erhöht, wenn sich die eingebauten Regeln ändern → importierte Buchungen werden beim Start neu eingeordnet */
-export const RULES_VERSION = 8
+export const RULES_VERSION = 9
 
 export const BUILTIN_RULES: [string, string][] = [
   // spezielle Kategorien zuerst (z. B. "Tierarzt" vor "Arzt", "Haustierversicherung" vor "Versicherung")
@@ -144,6 +144,14 @@ export function matchCategory(row: BankRow, rules: ClassifyContext['rules']): st
   return undefined
 }
 
+/** "Lena Muster" ist Familie, wenn ein eigener Name auf "Muster" endet (nicht aber nur "Muster" allein) */
+export function isFamily(counterparty: string, ownNames: string[]): boolean {
+  const words = norm(counterparty).split(' ').filter(Boolean)
+  if (words.length < 2) return false
+  const surnames = new Set(ownNames.map((n) => norm(n).split(' ').pop() ?? '').filter((n) => n.length >= 3))
+  return surnames.has(words[words.length - 1])
+}
+
 function findAccountByName(name: string, ctx: ClassifyContext): Account | undefined {
   const n = norm(name)
   if (!n) return undefined
@@ -208,13 +216,19 @@ export function classify(row: BankRow, ctx: ClassifyContext): Classified {
   }
 
   // 3. Eigenes Konto am Namen erkannt
-  const target = findAccountByName(row.counterparty, ctx) ?? findAccountByName(row.purpose, ctx)
+  // Verwendungszweck zuerst: er ist genauer ("Sparplan Lena" → Depot, Lastschrift "Lena Muster" → Sparkonto)
+  const target = findAccountByName(row.purpose, ctx) ?? findAccountByName(row.counterparty, ctx)
   if (target) return move(target)
 
   // 4. Eigene Namen
   const cpn = norm(row.counterparty)
   if (cpn && ctx.ownNames.some((n) => norm(n) && cpn === norm(n))) return move(undefined)
   if (/kleingeld plus/.test(cpn)) return move(undefined)
+  // Familie (gleicher Nachname wie ein eigener Name, z. B. Kinderkonten und -depots): Geld dorthin ist Sparen,
+  // Geld von dort eine Umbuchung – keine Ausgabe/Einnahme. Ziel offen, bis ein Konto "Erkennen an" passt.
+  if (isFamily(row.counterparty, ctx.ownNames)) {
+    return row.amountCents < 0 ? { kind: 'saving', counterparty } : move(undefined)
+  }
 
   // 5. Kreditkarten-Abrechnung
   if (/american express|amex/.test(cpn)) return move(ctx.accounts.find((a) => a.kind === 'credit' && /amex|american/i.test(a.name)) ?? ctx.accounts.find((a) => a.id === 'amex'))
